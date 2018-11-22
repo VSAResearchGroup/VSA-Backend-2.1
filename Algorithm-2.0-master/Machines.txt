@@ -1,0 +1,6 @@
+﻿<int:quarter> <int: year> <List of day and time> <list of jobs it can service. Each job separated by a whitespace>
+1 2018 322 406 26 38
+2 2019 164 25 20 
+2 2019 162 20 25 26
+3 2019 
+4 2019
