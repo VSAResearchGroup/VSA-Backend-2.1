@@ -27,7 +27,13 @@ namespace Scheduler {
         private Preferences preferences; //currently hard coded, take from UI later <==NEED TO IMPLEMENT==>
         private List<Job> completedPrior;//starting point, not implemented currently <==WRAP IN STARTING POINT?==>
         private List<Job> unableToSchedule;//list of courses that didn't fit into the schedule
-        private const int QUARTERS = 4; //HARDCODED VARIABLE; Limits to 1 calender year
+
+        private int quarters = 0; //Preference
+        private bool attendSummer = false; //Preference
+        int yearlength = 0; //either 3 quarters or 4 quarters depending on Summer preference
+        int years; //derived from dividing the total amount of quarters by the yearlength
+
+        private const int QUARTERS = 4; //HARDCODED VARIABLE; Limits to 1 calender year **LEGACY VARIABLE**
         #endregion
 
         #region Constructor
@@ -43,12 +49,47 @@ namespace Scheduler {
             finalPlan = new List<Machine>(); //Courses
             completedPrior = new List<Job>(); 
             unableToSchedule = new List<Job>();
+            quarters = 8;
+            yearlength = 4;
+            years = quarters / yearlength;
+            attendSummer = true;
 
             //Initialize
-            InitMachineNodes();
+            //InitMachineNodes();
+            InitializeMachineNodes();
             InitMachines();
-            InitYearTwo(); //temporary fix for the second year (WHY? <==INVESTIGATE==>)
+            //normalizeMachines();
+            //InitYearTwo(); //temporary fix for the second year (WHY? <==INVESTIGATE==>)
             InitNetwork(); //EXTERNAL MODULE CALL
+        }
+
+        public Scheduler(int quartersDeclared, bool summerIntent)
+        {
+            //Establish Variables
+            DBPlugin = new DBConnection();
+            machineNodes = new List<MachineNode>(); //Quarters
+            finalPlan = new List<Machine>(); //Courses
+            completedPrior = new List<Job>();
+            unableToSchedule = new List<Job>();
+            if (summerIntent)
+            {
+                attendSummer = true;
+                quarters = quartersDeclared;
+                years = quarters / 4;
+                yearlength = 4;
+            }
+            else
+            {
+                attendSummer = false;
+                quarters = quartersDeclared;
+                years = quarters / 3;
+                yearlength = 3;
+            }
+
+            InitializeMachineNodes();
+            InitMachines();
+            normalizeMachines();
+            InitNetwork();
         }
         #endregion
 
@@ -61,7 +102,7 @@ namespace Scheduler {
         private void InitNetwork()
         {
             //VARIABLES
-            string rawpreqs = DBPlugin.ExecuteToString("Select CourseID, GroupID, PrerequisiteID from Prerequisite for JSON AUTO"); //needs to be translated into a SQL query
+            string rawpreqs = DBPlugin.ExecuteToString("Select CourseID, GroupID, PrerequisiteID from Prerequisite for JSON AUTO");
             string rawcourses = DBPlugin.ExecuteToString("select CourseID from Course for JSON AUTO;");
             //NETWORK BUILD
             network = new CourseNetwork(rawcourses, rawpreqs);
@@ -73,9 +114,28 @@ namespace Scheduler {
         // taken. we simply skip taking that course in "putcourseonmachine" or
         // something
         //------------------------------------------------------------------------------
-        public void MakeStartingPoint(string s)
+        public void MakeStartingPoint(string english, string math)
         {
+            DataTable mathStart = DBPlugin.ExecuteToDT("select CourseID from Course where CourseNumber = '" + math + "' ;");
+            DataTable EnglStart = DBPlugin.ExecuteToDT("select CourseID from Course where CourseNumber = '" + english + "' ;");
+            /*
+            Console.WriteLine("Starting Point= Math: " + mathStart.Rows[0].ItemArray[0] + " English: " + EnglStart.Rows[0].ItemArray[0]);
+            Console.WriteLine();
+            */
 
+            Job tempJob = new Job((int)mathStart.Rows[0].ItemArray[0]);
+            tempJob.SetScheduled(true);
+            completedPrior.Add(tempJob);
+
+            tempJob = new Job((int)EnglStart.Rows[0].ItemArray[0]);
+            tempJob.SetScheduled(true);
+            completedPrior.Add(tempJob);
+
+            /*
+            Console.WriteLine(completedPrior[0].GetID() + " " + completedPrior[1].GetID());
+            Console.WriteLine();
+            */
+            
         }
 
         //------------------------------------------------------------------------------
@@ -90,6 +150,59 @@ namespace Scheduler {
                 MachineNode m = new MachineNode(0, i);
                 machineNodes.Add(m);
             }
+        }
+
+        private void InitializeMachineNodes()
+        {
+            if (quarters < yearlength)
+            {
+                for (int i = 1; i <= quarters; i++)
+                {
+                    MachineNode m = new MachineNode(0, i);
+                    machineNodes.Add(m);
+                }
+            }
+            else
+            {
+                int quarterCount = 0;
+                while (quarterCount < quarters)
+                {
+                    for (int i = 0; i < years; i++)
+                    {
+                        for (int j = 1; j <= yearlength; j++)
+                        {
+                            MachineNode m = new MachineNode(i, j);
+                            machineNodes.Add(m);
+                            quarterCount++;
+                        }
+                    }
+                }
+            }
+        }
+
+        void normalizeMachines()
+        {   //transfer all the same classes to the set of machine nodes
+            if (quarters >= yearlength)
+            {
+                for (int i = yearlength; i < quarters; i++)
+                {
+                    MachineNode oldMn = machineNodes[i % yearlength];
+                    MachineNode newMn = machineNodes[i];
+                    for (int j = 0; j < oldMn.GetMachines().Count; j++)
+                    {
+                        Machine oldMachine = oldMn.GetMachines()[j];
+                        Machine newMachine = new Machine(oldMachine);
+                        newMachine.SetYear(i / yearlength);
+                        newMn.AddMachine(newMachine);
+                    }
+                }
+                return;
+            }
+            else
+            {
+                return;
+            }
+  
         }
 
         //------------------------------------------------------------------------------
@@ -115,25 +228,29 @@ namespace Scheduler {
         // create a query that will pull all the different machines
         // which means getting every single time slot
         // distinct year, quarter, time, and set of DayTimes
+
+        //ANDRUE NOTE: This allocates a machine to every individual course in CourseTime and adds it to a list of Machines.
         //------------------------------------------------------------------------------
         private void InitMachines()
         {
             string query = "select CourseID, StartTimeID, EndTimeID, DayID, QuarterID, SectionID from CourseTime order by CourseID ASC;";
-
             DataTable dt = DBPlugin.ExecuteToDT(query);
+
+            //Temporary Machine Variables
             Machine dummyMachine = new Machine();
             DayTime dummyDayTime = new DayTime();
             int dt_size = dt.Rows.Count - 1;
             DataRow dr = dt.Rows[dt_size];
-            int currentCourse = (int)dr.ItemArray[0];
-            int currentQuarter = (int)dr.ItemArray[4];
-            int currentSection = (int)dr.ItemArray[5];
             int course = 0;
             int start = 0;
             int end = 0;
             int day = 0;
             int quarter = 0;
             int section = 0;
+
+            int currentCourse = (int)dr.ItemArray[0]; //USED FOR PEAKING THE NEXT ROW
+            int currentQuarter = (int)dr.ItemArray[4]; //USED FOR PEAKING THE NEXT ROW
+            int currentSection = (int)dr.ItemArray[5]; //USED FOR PEAKING THE NEXT ROW
 
             //Treats the information gained from the query like a FILO object
             while (dt_size >= 0)
@@ -144,7 +261,7 @@ namespace Scheduler {
                     dr.ItemArray[2] == DBNull.Value || dr.ItemArray[3] == DBNull.Value ||
                     dr.ItemArray[4] == DBNull.Value || dr.ItemArray[5] == DBNull.Value)
                 {
-                    dt_size--;
+                    dt_size--; //IF any portion is null, then the row is discarded entirely.
                     continue;
                 }
 
@@ -153,11 +270,11 @@ namespace Scheduler {
                 quarter = (int)dr.ItemArray[4];
                 //going to have to do the same with year probably
 
-                //same course but different section is a different machine
-                //different course is a different machine
+                //same course but different section OR different quarter is a different machine
+                //different course is a different machine 
                 if ((currentCourse == course && (currentSection != section || currentQuarter != quarter)) || (currentCourse != course))
                 {
-                    dummyMachine = new Machine();
+                    dummyMachine = new Machine(); //creates a new machine to be used
                     currentCourse = (int)dr.ItemArray[0];
                     currentSection = (int)dr.ItemArray[5];
                     currentQuarter = (int)dr.ItemArray[4];
@@ -176,50 +293,15 @@ namespace Scheduler {
                 //Andrue Note: Maybe isolate these arguments into helper functions for ease-of-use?
                 //if (itself(?)) OR (not same course) OR (IS course but NOT SAME Section OR Quarter)
                 if (dt_size == 0 || ((int)dt.Rows[dt_size - 1].ItemArray[0] != currentCourse ||
-                    ((int)dt.Rows[dt_size - 1].ItemArray[0] == currentCourse && 
-                    ((int)dt.Rows[dt_size - 1].ItemArray[5] != currentSection) 
+                    ((int)dt.Rows[dt_size - 1].ItemArray[0] == currentCourse &&
+                    ((int)dt.Rows[dt_size - 1].ItemArray[5] != currentSection)
                     || (int)dt.Rows[dt_size - 1].ItemArray[4] != currentQuarter)))
                 {
-                    dummyMachine.AddJob(new Job(course)); //adds job
-                    for (int i = 0; i < machineNodes.Count; i++)
-                    {
-                        MachineNode mn = machineNodes[i];
-                        List<Machine> machines = mn.GetMachines();
-                        if (machines.Count > 0)
-                        {
-                            for (int j = 0; j < machines.Count; j++)
-                            {
-                                Machine m = machines[j];
-                                if (m == dummyMachine)
-                                { //found the machine, just add job
-                                    m.AddJob(new Job(course));
-                                }
-                                else if (dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter()))
-                                { //machine does not exist, add it in
-                                    machines.Add(dummyMachine);
-                                    break;
-                                }
-                            }
-                        }
-                        else if (dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter()))
-                        {
-                            machines.Add(dummyMachine);
-                            break;
-                        }
-                        else //in the instance that machines == 0 and either year or quarter were different 
-                        {
-                            /*
-                            Console.WriteLine("Dummy Machine Year: " + dummyMachine.GetYear());
-                            Console.WriteLine("Dummy Machine Quarter: " + dummyMachine.GetQuarter());
-                            Console.WriteLine("mn Year: " + mn.GetYear());
-                            Console.WriteLine("mn Quarter: " + mn.GetQuarter());
-                            Console.WriteLine('\n');
-                            */
-                        }
-                    }
+                    addMachine(dummyMachine, course);
                 }
                 dt_size--;
             }
+            //END WHILE LOOP
             /*
             //print machines for testing; unnecessary
             for (int i = 0; i < machineNodes.Count; i++) {
@@ -233,6 +315,51 @@ namespace Scheduler {
             }
             */
         }
+
+        void addMachine(Machine dummyMachine, int course)
+        {
+            dummyMachine.AddJob(new Job(course)); //adds job
+            for (int i = 0; i < machineNodes.Count; i++)
+            {
+                MachineNode mn = machineNodes[i];
+                List<Machine> machines = mn.GetMachines();
+                if (machines.Count > 0)
+                {
+                    for (int j = 0; j < machines.Count; j++)
+                            {
+                        Machine m = machines[j];
+                        if (m == dummyMachine)
+                        { //found the machine, just add job
+                            m.AddJob(new Job(course));
+                            break;
+                        }
+                        else if (dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter()))
+                        { //machine does not exist, add it in
+                             machines.Add(dummyMachine);
+                             break;
+                        }
+                    }
+                }
+                else if (dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter()))
+                {
+                     machines.Add(dummyMachine);
+                     break;
+                }
+                else //in the instance that machines == 0 and either year or quarter were different 
+                {
+                    //NOTE: This isn't so much an error as a bookkeeping check. Because CourseTime contains only 1 year
+                    //      machines dated beyond the first year throw this error. So this is a database issue.
+                    /*
+                     Console.WriteLine("Dummy Machine Year: " + dummyMachine.GetYear());
+                     Console.WriteLine("Dummy Machine Quarter: " + dummyMachine.GetQuarter());
+                     Console.WriteLine("Dummy Course ID: " + course);
+                     Console.WriteLine("mn Year: " + mn.GetYear());
+                     Console.WriteLine("mn Quarter: " + mn.GetQuarter());
+                     Console.WriteLine('\n');
+                     */
+                }
+            }
+        } 
         #endregion
 
         #region Scheduling Algorithm
@@ -387,7 +514,7 @@ namespace Scheduler {
         private List<Machine> GetBusyMachines()
         {
             List<Machine> busy = new List<Machine>();
-            for (int i = 0; i < machineNodes.Capacity; i++)
+            for (int i = 0; i < machineNodes.Count; i++)
             {
                 List<Machine> machines = machineNodes[i].GetAllScheduledMachines();
                 for (int j = 0; j < machines.Count; j++)
@@ -416,6 +543,16 @@ namespace Scheduler {
         //------------------------------------------------------------------------------
         private bool IsScheduled(Job j)
         {
+            if (completedPrior.Count > 0)
+            {
+                for (int i = 0; i < completedPrior.Count; i++)
+                {
+                    if (j.GetID() == completedPrior[i].GetID())
+                    {
+                        return true;
+                    }
+                }
+            }
             for (int i = 0; i < finalPlan.Count; i++)
             {
                 Machine m = finalPlan[i];
