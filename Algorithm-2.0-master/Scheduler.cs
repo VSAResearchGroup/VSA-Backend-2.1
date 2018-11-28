@@ -143,14 +143,14 @@ namespace Scheduler {
         // 
         // 
         //------------------------------------------------------------------------------
-        private void InitMachineNodes()
+        /*private void InitMachineNodes()
         {
             for (int i = 1; i <= QUARTERS; i++)
             {
                 MachineNode m = new MachineNode(0, i);
                 machineNodes.Add(m);
             }
-        }
+        }*/
 
         private void InitializeMachineNodes()
         {
@@ -235,20 +235,19 @@ namespace Scheduler {
         {
             string query = "select CourseID, StartTimeID, EndTimeID, DayID, QuarterID, SectionID from CourseTime order by CourseID ASC;";
             DataTable dt = DBPlugin.ExecuteToDT(query);
+            int dt_size = dt.Rows.Count - 1;
+            DataRow dr = dt.Rows[dt_size];
 
             //Temporary Machine Variables
             Machine dummyMachine = new Machine();
             DayTime dummyDayTime = new DayTime();
-            int dt_size = dt.Rows.Count - 1;
-            DataRow dr = dt.Rows[dt_size];
             int course = 0;
             int start = 0;
             int end = 0;
             int day = 0;
             int quarter = 0;
             int section = 0;
-
-            int currentCourse = (int)dr.ItemArray[0]; //USED FOR PEAKING THE NEXT ROW
+            int currentCourse = (int)dr.ItemArray[0];  //USED FOR PEAKING THE NEXT ROW
             int currentQuarter = (int)dr.ItemArray[4]; //USED FOR PEAKING THE NEXT ROW
             int currentSection = (int)dr.ItemArray[5]; //USED FOR PEAKING THE NEXT ROW
 
@@ -264,11 +263,13 @@ namespace Scheduler {
                     dt_size--; //IF any portion is null, then the row is discarded entirely.
                     continue;
                 }
-
+                //going to have to do the same with year probably; Andrue Note: Most likely the case
                 course = (int)dr.ItemArray[0];
-                section = (int)dr.ItemArray[5];
+                start = (int)dr.ItemArray[1];
+                end = (int)dr.ItemArray[2];
+                day = (int)dr.ItemArray[3];
                 quarter = (int)dr.ItemArray[4];
-                //going to have to do the same with year probably
+                section = (int)dr.ItemArray[5];
 
                 //same course but different section OR different quarter is a different machine
                 //different course is a different machine 
@@ -276,13 +277,10 @@ namespace Scheduler {
                 {
                     dummyMachine = new Machine(); //creates a new machine to be used
                     currentCourse = (int)dr.ItemArray[0];
-                    currentSection = (int)dr.ItemArray[5];
                     currentQuarter = (int)dr.ItemArray[4];
+                    currentSection = (int)dr.ItemArray[5];
                 }
 
-                start = (int)dr.ItemArray[1];
-                end = (int)dr.ItemArray[2];
-                day = (int)dr.ItemArray[3];
                 dummyDayTime = new DayTime();
                 dummyDayTime.SetDayTime(day, start, end);
                 dummyMachine.AddDayTime(dummyDayTime);
@@ -292,10 +290,11 @@ namespace Scheduler {
                 //(different course) OR (same course and (different section OR dif qtr))
                 //Andrue Note: Maybe isolate these arguments into helper functions for ease-of-use?
                 //if (itself(?)) OR (not same course) OR (IS course but NOT SAME Section OR Quarter)
-                if (dt_size == 0 || ((int)dt.Rows[dt_size - 1].ItemArray[0] != currentCourse ||
-                    ((int)dt.Rows[dt_size - 1].ItemArray[0] == currentCourse &&
-                    ((int)dt.Rows[dt_size - 1].ItemArray[5] != currentSection)
-                    || (int)dt.Rows[dt_size - 1].ItemArray[4] != currentQuarter)))
+                int next = dt_size - 1;
+                if (dt_size == 0 || ((int)dt.Rows[next].ItemArray[0] != currentCourse ||
+                    ((int)dt.Rows[next].ItemArray[0] == currentCourse &&
+                    ((int)dt.Rows[next].ItemArray[5] != currentSection)
+                    || (int)dt.Rows[next].ItemArray[4] != currentQuarter)))
                 {
                     addMachine(dummyMachine, course);
                 }
@@ -724,7 +723,7 @@ namespace Scheduler {
         // 
         // 
         //------------------------------------------------------------------------------
-        private void InitYearTwo()
+        /*private void InitYearTwo()
         {
             //init more machine nodes for the next year
             for (int i = 1; i <= QUARTERS; i++)
@@ -745,7 +744,7 @@ namespace Scheduler {
                     newMn.AddMachine(newMachine);
                 }
             }
-        }
+        }*/
         /*
             •	Being scheduled during the summer   (WILL IMPLEMENT THIS QUARTER)
             •	Maximum number of core courses per quarter   (WILL NOT IMPLEMENT THIS QUARTER)
