@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Scheduler {
     class Job {
@@ -35,6 +36,15 @@ namespace Scheduler {
         // constructor
         // 
         //------------------------------------------------------------------------------
+        public Job()
+        {
+            id = -0;
+            scheduled = false;
+            prerequisitesScheduled = false;
+            quarterScheduled = 0;
+            yearScheduled = 0;
+        }
+
         public Job(int id) {
             this.id = id;
             scheduled = false;

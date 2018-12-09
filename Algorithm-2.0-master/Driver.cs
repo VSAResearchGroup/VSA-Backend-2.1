@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using System.Linq;
 using System.Text;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Scheduler {
@@ -16,7 +18,7 @@ namespace Scheduler {
 
             
             //Preferences: Max Quarter and Summer Preference
-            Scheduler scheduler = new Scheduler(12, true);
+            Scheduler scheduler = new Scheduler(20, false);
 
             #region Starting point
             //Input degree plan
@@ -28,18 +30,24 @@ namespace Scheduler {
 
             #region Make Proposed Schedule
             //make new proposed schedule object
-            List<Machine> schedule = new List<Machine>();
+            List<Machine> schedule;
          
             //Output and Schedule Generation
             Console.WriteLine("Scheduled following courses:");
             schedule = scheduler.CreateSchedule();
+            File.WriteAllText("test.txt",scheduler.getJSONString());
+            schedule[0].PrintBusyMachine();
+            //string result = schedule[0].convertToJson();
+            
+
+            //Console.WriteLine(schedule[0].convertToJson());
 
             /*print all busy machines*/
             
             for (int i = 0; i < schedule.Count; i++) {
                 Machine m = schedule[i];
                 m.PrintBusyMachine();
-            }            
+            }           
             #endregion
 
             #region Error Output

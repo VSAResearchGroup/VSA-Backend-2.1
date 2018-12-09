@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Data.SqlClient;
+using System.Text;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using Newtonsoft.Json;
 
 namespace Scheduler {
     class Scheduler {
@@ -379,6 +381,7 @@ namespace Scheduler {
             //return proposed schedule
             return finalPlan;
         }
+        
     
         //------------------------------------------------------------------------------
         // similar to depth first search algorithm. Does the action of searching through
@@ -510,7 +513,7 @@ namespace Scheduler {
         // PASSES busy machines to driver as final plan. in the future, it will be
         // serialized and passed to UI
         //------------------------------------------------------------------------------
-        private List<Machine> GetBusyMachines()
+        public List<Machine> GetBusyMachines()
         {
             List<Machine> busy = new List<Machine>();
             for (int i = 0; i < machineNodes.Count; i++)
@@ -522,6 +525,50 @@ namespace Scheduler {
                 }
             }
             return busy;
+        }
+
+        public string getJSONString()
+        {
+            List<Machine> machines = new List<Machine>();
+            machines = GetBusyMachines();
+            StringWriter sw = new StringWriter(new StringBuilder());
+            using (JsonWriter writer = new JsonTextWriter(sw))
+            {
+                writer.Formatting = Formatting.Indented;
+
+                writer.WriteStartObject();
+                writer.WritePropertyName("Courses");
+                writer.WriteStartArray();
+                for (int i = 0; i < machines.Count; i++)
+                    {
+                        writer.WriteStartObject();
+                        writer.WritePropertyName("Year");
+                        writer.WriteValue(machines[i].GetYear());
+                        writer.WritePropertyName("Quarter");
+                        writer.WriteValue(machines[i].GetQuarter());
+                        writer.WritePropertyName("CourseID");
+                        writer.WriteValue(machines[i].GetCurrentJobProcessing().GetID());
+                        writer.WritePropertyName("DateTimes");
+                        writer.WriteStartArray();
+                        List<DayTime> dt = machines[i].GetDateTime();
+                        for (int j = dt.Count - 1; j >= 0; j--)
+                        {
+                            writer.WriteStartObject();
+                            writer.WritePropertyName("Day");
+                            writer.WriteValue(dt[j].GetDay());
+                            writer.WritePropertyName("StartTime");
+                            writer.WriteValue(dt[j].GetStartTime());
+                            writer.WritePropertyName("EndTime");
+                            writer.WriteValue(dt[j].GetEndTime());
+                            writer.WriteEndObject();
+                        }
+                        writer.WriteEndArray();
+                        writer.WriteEndObject();
+                    }
+                writer.WriteEndArray();
+                writer.WriteEndObject();
+            }
+            return sw.ToString();
         }
 
         //------------------------------------------------------------------------------

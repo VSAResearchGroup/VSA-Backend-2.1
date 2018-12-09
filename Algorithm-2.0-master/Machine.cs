@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using System.Text;
+using System.IO;
 
 namespace Scheduler {
     class Machine {
@@ -263,6 +266,7 @@ namespace Scheduler {
         // prints just one job
         // 
         //------------------------------------------------------------------------------
+
         public void PrintBusyMachine() {
             Console.WriteLine("-----------------------------------");
             Console.WriteLine("Year: " + year);
@@ -278,6 +282,43 @@ namespace Scheduler {
             }
             Console.WriteLine("-----------------------------------");
         }
+/*
+        public string convertToJson()
+        {
+            
+            StringBuilder sb = new StringBuilder();
+            StringWriter sw = new StringWriter(sb);
+            using (JsonWriter writer = new JsonTextWriter(sw))
+            {
+                writer.Formatting = Formatting.Indented;
+
+                writer.WriteStartObject();
+                writer.WritePropertyName("Year");
+                writer.WriteValue(year);
+                writer.WritePropertyName("Quarter");
+                writer.WriteValue(quarter);
+                writer.WritePropertyName("CourseID");
+                writer.WriteValue(currentJobProcessing.GetID());
+                writer.WritePropertyName("DateTimes");
+                writer.WriteStartArray();
+                for (int i = dateTime.Count - 1; i >= 0; i--)
+                {
+                    writer.WriteStartObject();
+                    writer.WritePropertyName("Day");
+                    writer.WriteValue(dateTime[i].GetDay());
+                    writer.WritePropertyName("StartTime");
+                    writer.WriteValue(dateTime[i].GetStartTime());
+                    writer.WritePropertyName("EndTime");
+                    writer.WriteValue(dateTime[i].GetEndTime());
+                    writer.WriteEndObject();
+                }
+                writer.WriteEndArray();
+                writer.WriteEnd();
+            }
+            return sw.ToString();
+
+        }
+        */
         #endregion
 
         #region Linear Search for DayTime

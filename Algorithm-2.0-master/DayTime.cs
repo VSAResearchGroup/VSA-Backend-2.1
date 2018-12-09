@@ -3,11 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Scheduler {
     class DayTime {
+        
+        [JsonProperty]
         private int day;
+        [JsonProperty]
         private int start_time;
+        [JsonProperty]
         private int end_time;
 
         #region Constructors
