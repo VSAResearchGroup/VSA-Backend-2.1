@@ -21,10 +21,15 @@ namespace Scheduler {
         #endregion
 
         #region Class Variables
+        [JsonProperty]
         private int id;
+        [JsonIgnore]
         private bool scheduled;
+        [JsonIgnore]
         private bool prerequisitesScheduled;
+        [JsonIgnore]
         private int quarterScheduled;
+        [JsonIgnore]
         private int yearScheduled;
         //need to implement int credits for the course for preferences purposes
         //need to implement boolean if its a major course or not for preferences purposes

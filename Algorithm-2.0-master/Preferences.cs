@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections;
-
+using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,7 +19,25 @@ namespace Scheduler {
         #endregion
 
         #region VARIABLES
-        Hashtable preferences;
+        //Hashtable preferences;
+        private string JsonString;
+        private List<ParameterSet> prefs;
+        private List<Job> priors;
+        bool summerIntent;
+
+        private class CourseNumbers
+        {
+            [JsonProperty]
+            private string CourseNumber { get; set; }
+
+            public string returnCourse()
+            {
+                return CourseNumber;
+            }
+        }
+
+
+        private DBConnection dbHit;
         #endregion
 
         #region Constructors
@@ -28,48 +47,106 @@ namespace Scheduler {
         // 
         //------------------------------------------------------------------------------
         public Preferences() {
-            preferences = new Hashtable();
+            JsonString = "";
+        }
+
+        public Preferences(string JsonInput)
+        {
+            JsonString = JsonInput;
+            Deserialize();
+        }
+
+        public Preferences(int parameterID)
+        {
+            dbHit = new DBConnection();
+            JsonString = "";
+            JsonString = dbHit.ExecuteToString("select * from ParameterSet where ID =" + parameterID + "for JSON AUTO;");
+            Deserialize();
+            SetPriors();
+            determineSummer();
         }
         #endregion
 
-        #region Adjusters/Setters
-        //------------------------------------------------------------------------------
-        // 
-        // extendable to add more preferences
-        // 
-        //------------------------------------------------------------------------------
-        public void AddPreference(String name, Object a) {
-            if(!preferences.ContainsKey(name)) preferences.Add(name, a);
+        #region JsonDeserializer
+        private void Deserialize()
+        {
+            prefs = new List<ParameterSet>();
+            prefs = JsonConvert.DeserializeObject<List<ParameterSet>>(JsonString, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Include });
+            //Console.WriteLine("ID: " + prefs[0].getID());
+            //Console.WriteLine("Major " + prefs[0].getMajor());
+            //Console.WriteLine("School " + prefs[0].getSchool());
+            //Console.WriteLine("Time " + prefs[0].getTimeP());
+            //Console.WriteLine("Quarter " + prefs[0].getQuarterP());
+            //Console.WriteLine("Completed " + prefs[0].getCompleted());
+            //Console.WriteLine("Placement " + prefs[0].getPlacement());
+            //Console.WriteLine("Budget " + prefs[0].getBudget());
+            //Console.WriteLine("Summer? " + prefs[0].getSummer());
+            //Console.WriteLine("Enrollment " + prefs[0].getEnrollment());
+            //Console.WriteLine(JsonString);
         }
 
-        //------------------------------------------------------------------------------
-        // 
-        // removes preferences
-        // 
-        //------------------------------------------------------------------------------
-        public void DeletePreference(String name) {
-            if (preferences.ContainsKey(name)) preferences.Remove(name);
-        }
-        #endregion
-
-        #region Getters
-        //------------------------------------------------------------------------------
-        // 
-        // checks if a preference exists; not used at the moment
-        // 
-        //------------------------------------------------------------------------------
-        public bool Exists(String name) {
-            return preferences.ContainsKey(name);
+        public List<Job> getPriors()
+        {
+            return priors;
         }
 
-        //------------------------------------------------------------------------------
-        // 
-        // returns a preference
-        // 
-        //------------------------------------------------------------------------------
-        public Object GetPreference(String name) {
-            return preferences[name];
+
+        private void SetPriors()
+        {
+            //Console.WriteLine(prefs[0].getCompleted());
+            priors = new List<Job>();
+            addTopriors(prefs[0].getCompleted());
+            addTopriors(prefs[0].getPlacement());
+            //for (int i = 0; i < priors.Count; i++)
+            //{
+            //    Console.WriteLine("ID: " + priors[i].GetID());
+            //}
         }
+
+        private void addTopriors(string passed)
+        {
+            List<CourseNumbers> courses = JsonConvert.DeserializeObject<List<CourseNumbers>>(passed);
+            for (int i = 0; i < courses.Count; i++)
+            {
+                //Console.WriteLine(courses[0].returnCourse());
+                DataTable courseID = dbHit.ExecuteToDT("select CourseID from Course where CourseNumber = '" + courses[i].returnCourse() + "' ;");
+
+                Job tempJob = new Job((int)courseID.Rows[0].ItemArray[0]);
+                tempJob.SetScheduled(true);
+                priors.Add(tempJob);
+                //Console.WriteLine(tempJob.GetID());
+            }
+        }
+        public int getMajor()
+        {
+            return prefs[0].getMajor();
+        }
+
+        public int getSchool()
+        {
+            return prefs[0].getSchool();
+        }
+
+        public int getQuarters()
+        {
+            return prefs[0].getBudget();
+        }
+
+        public bool getSummer()
+        {
+            return summerIntent;
+        }
+        private void determineSummer()
+        {
+            char test = prefs[0].getSummer()[0];
+            Console.WriteLine(test);
+            if (test == 'Y' || test == 'y')
+            {
+                summerIntent = true;
+            }
+            Console.WriteLine(summerIntent);
+        }
+        
         #endregion
     }
 }

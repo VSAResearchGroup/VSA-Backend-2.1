@@ -20,11 +20,17 @@ namespace Scheduler {
         #endregion
 
         #region Variables
+        [JsonIgnore]
         private bool inUse; //Not sure what this is for
+        [JsonProperty]
         private int year;
+        [JsonProperty]
         private int quarter;
+        [JsonIgnore]
         private List<Job> jobs; //READ: The courses associated to this machine(?)
+        [JsonProperty]
         private Job currentJobProcessing;
+        [JsonProperty]
         private List<DayTime> dateTime; //datetimes from class?
         #endregion
 
@@ -345,6 +351,14 @@ namespace Scheduler {
         // 
         //------------------------------------------------------------------------------
         public static bool operator ==(Machine thism, Machine right) {
+            if (object.ReferenceEquals(thism, right))
+            {
+                return true;
+            }
+            if (object.ReferenceEquals(thism, null) || object.ReferenceEquals(right, null))
+            {
+                return false;
+            }
             if (thism.quarter != right.quarter || thism.year != right.year
                 || thism.dateTime.Count != right.dateTime.Count) {
                 return false;
@@ -373,6 +387,16 @@ namespace Scheduler {
         //------------------------------------------------------------------------------
         public override bool Equals(object obj)
         {
+            return this == (obj as Machine);
+        }
+
+        public bool Equals(Machine obj)
+        {
+            return this == obj;
+        }
+        /*
+        public override bool Equals(object obj)
+        {
             Machine j = obj as Machine;
             if (j == null)
             {
@@ -383,6 +407,7 @@ namespace Scheduler {
                 return j == this;
             }
         }
+        */
         #endregion
     }
 }
