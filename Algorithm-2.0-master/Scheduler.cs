@@ -21,13 +21,21 @@ namespace Scheduler {
         #endregion
 
         #region Class Variables
+        [JsonIgnore]
         private DBConnection DBPlugin;  //Declare the SQL connection to Database
+        [JsonIgnore]
         private CourseNetwork network;   //A network of Courses and their respective prerequisite chains
+        [JsonIgnore]
         private List<MachineNode> machineNodes; //Each node is one Quarter
+        [JsonIgnore]
         private DegreePlan myPlan;       //pull from DB *STORED?* <===== Need to investigate
-        private List<Machine> finalPlan; //output schedule 
+        [JsonProperty]
+        private List<Machine> finalPlan; //output schedule
+        [JsonIgnore]
         private Preferences preferences; //currently hard coded, take from UI later <==NEED TO IMPLEMENT==>
+        [JsonIgnore]
         private List<Job> completedPrior;//starting point, not implemented currently <==WRAP IN STARTING POINT?==>
+        [JsonProperty]
         private List<Job> unableToSchedule;//list of courses that didn't fit into the schedule
 
         private int quarters = 0; //Preference
@@ -51,6 +59,8 @@ namespace Scheduler {
             finalPlan = new List<Machine>(); //Courses
             completedPrior = new List<Job>(); 
             unableToSchedule = new List<Job>();
+            preferences = new Preferences();
+
             quarters = 8;
             yearlength = 4;
             years = quarters / yearlength;
@@ -73,25 +83,34 @@ namespace Scheduler {
             finalPlan = new List<Machine>(); //Courses
             completedPrior = new List<Job>();
             unableToSchedule = new List<Job>();
-            if (summerIntent)
-            {
-                attendSummer = true;
-                quarters = quartersDeclared;
-                years = quarters / 4;
-                yearlength = 4;
-            }
-            else
-            {
-                attendSummer = false;
-                quarters = quartersDeclared;
-                years = quarters / 3;
-                yearlength = 3;
-            }
+            preferences = new Preferences();
 
+            //SetUp Functions
+            DeterminePlanLength(quartersDeclared, summerIntent);
+            InitializeMachineNodes();
+            InitMachines();
+            normalizeMachines(); //Disposable after live data
+            InitNetwork();
+        }
+
+        public Scheduler(int jsonInput)
+        {
+            DBPlugin = new DBConnection();
+            machineNodes = new List<MachineNode>();
+            finalPlan = new List<Machine>();
+            completedPrior = new List<Job>();
+            unableToSchedule = new List<Job>();
+
+            preferences = new Preferences(jsonInput);
+
+            DeterminePlanLength(preferences.getQuarters(), preferences.getSummer());
             InitializeMachineNodes();
             InitMachines();
             normalizeMachines();
             InitNetwork();
+            MakeStartingPoint();
+            InitDegreePlan();
+            CreateSchedule();
         }
         #endregion
 
@@ -111,20 +130,41 @@ namespace Scheduler {
             network.BuildNetwork();
          }
 
+        private void DeterminePlanLength(int quartersDeclared, bool summerIntent)
+        {
+            if (summerIntent)
+            {
+                attendSummer = true;
+                quarters = quartersDeclared;
+                years = quarters / 4;
+                yearlength = 4;
+            }
+            else
+            {
+                attendSummer = false;
+                quarters = quartersDeclared;
+                years = quarters / 3;
+                yearlength = 3;
+            }
+        }
+
         //------------------------------------------------------------------------------
         // to be implemented when we can take in courses from the UI that the user has
         // taken. we simply skip taking that course in "putcourseonmachine" or
         // something
         //------------------------------------------------------------------------------
+
+        //BASED On PREFERENCES STARTED IN CONSTRUCTOR
+        private void MakeStartingPoint()
+        {
+            completedPrior = preferences.getPriors();
+        }
+
         public void MakeStartingPoint(string english, string math)
         {
             DataTable mathStart = DBPlugin.ExecuteToDT("select CourseID from Course where CourseNumber = '" + math + "' ;");
             DataTable EnglStart = DBPlugin.ExecuteToDT("select CourseID from Course where CourseNumber = '" + english + "' ;");
-            /*
-            Console.WriteLine("Starting Point= Math: " + mathStart.Rows[0].ItemArray[0] + " English: " + EnglStart.Rows[0].ItemArray[0]);
-            Console.WriteLine();
-            */
-
+           
             Job tempJob = new Job((int)mathStart.Rows[0].ItemArray[0]);
             tempJob.SetScheduled(true);
             completedPrior.Add(tempJob);
@@ -132,12 +172,6 @@ namespace Scheduler {
             tempJob = new Job((int)EnglStart.Rows[0].ItemArray[0]);
             tempJob.SetScheduled(true);
             completedPrior.Add(tempJob);
-
-            /*
-            Console.WriteLine(completedPrior[0].GetID() + " " + completedPrior[1].GetID());
-            Console.WriteLine();
-            */
-            
         }
 
         //------------------------------------------------------------------------------
@@ -169,13 +203,15 @@ namespace Scheduler {
                 int quarterCount = 0;
                 while (quarterCount < quarters)
                 {
-                    for (int i = 0; i < years; i++)
+                    for (int i = 0; i <= years; i++)
                     {
                         for (int j = 1; j <= yearlength; j++)
                         {
                             MachineNode m = new MachineNode(i, j);
                             machineNodes.Add(m);
                             quarterCount++;
+                            if (quarterCount >= quarters)
+                                break;
                         }
                     }
                 }
@@ -216,7 +252,22 @@ namespace Scheduler {
         {
             string query = "select CourseID from AdmissionRequiredCourses where MajorID ="
                             + majorID + " and SchoolID = " + schoolID + " order by CourseID ASC ";
-            DataTable dt = DBPlugin.ExecuteToDT(query);
+            planBuilder(DBPlugin.ExecuteToDT(query));
+
+        }
+
+
+        //USED IN CONSTRUCTOR
+        private void InitDegreePlan()
+        {
+            string query = "select CourseID from AdmissionRequiredCourses where MajorID ="
+                + preferences.getMajor() + " and SchoolID = " + preferences.getSchool() + " order by CourseID ASC";
+            planBuilder(DBPlugin.ExecuteToDT(query));
+        }
+
+        //HELPER FUNCTION FOR InitDegreePlan, adds the courses from the query to the List of courses that need to be scheduled
+        private void planBuilder(DataTable dt)
+        {
             List<Job> courseNums = new List<Job>();
             foreach (DataRow row in dt.Rows)
             {
@@ -518,6 +569,8 @@ namespace Scheduler {
             List<Machine> busy = new List<Machine>();
             for (int i = 0; i < machineNodes.Count; i++)
             {
+                //Console.WriteLine(machineNodes.Count);
+                //Console.WriteLine(machineNodes[i].GetYear() + " " + machineNodes[i].GetQuarter());
                 List<Machine> machines = machineNodes[i].GetAllScheduledMachines();
                 for (int j = 0; j < machines.Count; j++)
                 {
@@ -525,50 +578,6 @@ namespace Scheduler {
                 }
             }
             return busy;
-        }
-
-        public string getJSONString()
-        {
-            List<Machine> machines = new List<Machine>();
-            machines = GetBusyMachines();
-            StringWriter sw = new StringWriter(new StringBuilder());
-            using (JsonWriter writer = new JsonTextWriter(sw))
-            {
-                writer.Formatting = Formatting.Indented;
-
-                writer.WriteStartObject();
-                writer.WritePropertyName("Courses");
-                writer.WriteStartArray();
-                for (int i = 0; i < machines.Count; i++)
-                    {
-                        writer.WriteStartObject();
-                        writer.WritePropertyName("Year");
-                        writer.WriteValue(machines[i].GetYear());
-                        writer.WritePropertyName("Quarter");
-                        writer.WriteValue(machines[i].GetQuarter());
-                        writer.WritePropertyName("CourseID");
-                        writer.WriteValue(machines[i].GetCurrentJobProcessing().GetID());
-                        writer.WritePropertyName("DateTimes");
-                        writer.WriteStartArray();
-                        List<DayTime> dt = machines[i].GetDateTime();
-                        for (int j = dt.Count - 1; j >= 0; j--)
-                        {
-                            writer.WriteStartObject();
-                            writer.WritePropertyName("Day");
-                            writer.WriteValue(dt[j].GetDay());
-                            writer.WritePropertyName("StartTime");
-                            writer.WriteValue(dt[j].GetStartTime());
-                            writer.WritePropertyName("EndTime");
-                            writer.WriteValue(dt[j].GetEndTime());
-                            writer.WriteEndObject();
-                        }
-                        writer.WriteEndArray();
-                        writer.WriteEndObject();
-                    }
-                writer.WriteEndArray();
-                writer.WriteEndObject();
-            }
-            return sw.ToString();
         }
 
         //------------------------------------------------------------------------------
@@ -816,15 +825,17 @@ namespace Scheduler {
         //•	starting quarter of plan. [1,2,3,4]  (NOT IMPLEMENTED)
         // 
         //------------------------------------------------------------------------------
-        private void CreatePreferences() {
-            preferences = new Preferences();
-            preferences.AddPreference("SUMMER", false);
-            preferences.AddPreference("CORE_PER_QUARTER", 10);
-            preferences.AddPreference("MAX_QUARTERS", 16);
-            preferences.AddPreference("TIME_INTERVAL", new DayTime(1, 70, 130)); //do a whole bunch?
-            preferences.AddPreference("CREDITS_PER_QUARTER", 15);
-            preferences.AddPreference("STARTING_QUARTER", 2);
-        }
+
+        //----DEAD CODE-----OBSOLETE
+        //private void CreatePreferences() {
+        //    preferences = new Preferences();
+        //    preferences.AddPreference("SUMMER", false);
+        //    preferences.AddPreference("CORE_PER_QUARTER", 10);
+        //    preferences.AddPreference("MAX_QUARTERS", 16);
+        //    preferences.AddPreference("TIME_INTERVAL", new DayTime(1, 70, 130)); //do a whole bunch?
+        //    preferences.AddPreference("CREDITS_PER_QUARTER", 15);
+        //    preferences.AddPreference("STARTING_QUARTER", 2);
+        //}
         #endregion
     }
 }
