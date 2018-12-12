@@ -9,6 +9,12 @@ namespace Scheduler
 {
     public class ParameterSet
     {
+        #region Variables
+        //------------------------------------------------------------------------------
+        // This represents the entirety of ParameterSet in the database. Should the 
+        // database be changed then this must also be changed to reflect it for optimum
+        // performance
+        //------------------------------------------------------------------------------
         [JsonProperty]
         private int ID { get; set; }
         [JsonProperty]
@@ -35,7 +41,9 @@ namespace Scheduler
         private string SummerPreference { get; set; }
         [JsonProperty]
         private string EnrollmentType { get; set; }
+        #endregion
 
+        #region Getters
         public int getID ()
         {
             return ID;
@@ -76,6 +84,6 @@ namespace Scheduler
         {
             return EnrollmentType;
         }
-        
+        #endregion
     }
 }
