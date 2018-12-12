@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace Scheduler {
     class Job {
@@ -37,9 +31,7 @@ namespace Scheduler {
 
         #region Constructor
         //------------------------------------------------------------------------------
-        // 
         // constructor
-        // 
         //------------------------------------------------------------------------------
         public Job()
         {
@@ -61,45 +53,37 @@ namespace Scheduler {
 
         #region Getters
         //------------------------------------------------------------------------------
-        // 
         // boolean for scheduled or not
-        // 
         //------------------------------------------------------------------------------
         public bool GetScheduled() {
             return scheduled;
         }
 
         //------------------------------------------------------------------------------
-        // 
         // boolean for if the prerequisites are scheduled
-        // 
         //------------------------------------------------------------------------------
         public bool GetPrerequisitesScheduled() {
             return prerequisitesScheduled;
         }
 
         //------------------------------------------------------------------------------
-        // 
         // getter for wuarter scheduled
-        // 
         //------------------------------------------------------------------------------
         public int GetQuarterScheduled()
         {
             return quarterScheduled;
         }
+
         //------------------------------------------------------------------------------
-        // 
         // getter for year scheduled
-        // 
         //------------------------------------------------------------------------------
         public int GetYearScheduled()
         {
             return yearScheduled;
         }
+
         //------------------------------------------------------------------------------
-        // 
         // getter for id of course; corresponds to what it is in DB
-        // 
         //------------------------------------------------------------------------------
         public int GetID()
         {
@@ -145,11 +129,9 @@ namespace Scheduler {
         }
         #endregion
 
-        #region Comparison Operator
+        #region Comparison Operators
         //------------------------------------------------------------------------------
-        // 
         // equality
-        // 
         //------------------------------------------------------------------------------
         public static bool operator ==(Job thisj, Job right) {
             if(object.ReferenceEquals(thisj, null) || object.ReferenceEquals(right, null)) {
@@ -161,20 +143,10 @@ namespace Scheduler {
             return thisj.Equals(right);
         }
 
-        //------------------------------------------------------------------------------
-        // 
-        // equality
-        // 
-        //------------------------------------------------------------------------------
         public static bool operator !=(Job thisj, Job right) {
             return !(thisj == right);
         }
 
-        //------------------------------------------------------------------------------
-        // 
-        // equality
-        // 
-        //------------------------------------------------------------------------------
         public override bool Equals(object obj) {
             Job j = obj as Job;
             return this.id == j.id;

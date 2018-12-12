@@ -15,18 +15,16 @@ namespace Scheduler {
         // machines now. it will pass them to UI later.
         //------------------------------------------------------------------------------
         static void Main(string[] args) {
-
-
             //Preferences: Max Quarter and Summer Preference
-            Scheduler scheduler = new Scheduler(188);
-            //Scheduler scheduler = new Scheduler(20, false);
+            //Scheduler scheduler = new Scheduler(188);
+            Scheduler scheduler = new Scheduler(12, false);
 
             #region Starting point
             //Input degree plan
 
             //Preferences: Starting Point, Major, and School
             //scheduler.MakeStartingPoint("ENGL& 101", "MATH& 141");
-            //scheduler.InitDegreePlan(22, 6); //get this from UI later
+            scheduler.InitDegreePlan(22, 6); //get this from UI later
             #endregion
 
             #region Make Proposed Schedule
@@ -35,7 +33,7 @@ namespace Scheduler {
          
             //Output and Schedule Generation
             //Console.WriteLine("Scheduled following courses:");
-            //scheduler.CreateSchedule();
+            scheduler.CreateSchedule();
             Console.WriteLine(JsonConvert.SerializeObject(scheduler, Formatting.Indented));
  
             /*print all busy machines*/
