@@ -1,20 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Newtonsoft.Json;
 
 namespace Scheduler {
     class DayTime {
+        
+        [JsonProperty]
         private int day;
+        [JsonProperty]
         private int start_time;
+        [JsonProperty]
         private int end_time;
 
         #region Constructors
         //------------------------------------------------------------------------------
-        // 
-        // 
-        // 
+        // Default Constructor
         //------------------------------------------------------------------------------
         public DayTime() {
             day = 0;
@@ -23,9 +21,7 @@ namespace Scheduler {
         }
 
         //------------------------------------------------------------------------------
-        // 
-        // 
-        // 
+        // Constructor + parameters (day, starttime, endtime)
         //------------------------------------------------------------------------------
         public DayTime(int d, int st, int et) {
             day = d;
@@ -35,18 +31,14 @@ namespace Scheduler {
         #endregion
 
         //------------------------------------------------------------------------------
-        // 
         // getters
-        // 
         //------------------------------------------------------------------------------
         public int GetDay() { return day; }
         public int GetStartTime() { return start_time; }
         public int GetEndTime() { return end_time; }
 
         //------------------------------------------------------------------------------
-        // 
         // setters
-        // 
         //------------------------------------------------------------------------------
         public void SetDay(int d) { day = d; }
         public void SetStartTime(int st) { start_time = st; }
@@ -59,9 +51,7 @@ namespace Scheduler {
         }
 
         //------------------------------------------------------------------------------
-        // 
         // equality
-        // 
         //------------------------------------------------------------------------------
         public static bool operator ==(DayTime thism, DayTime right) {
             if (thism.day != right.day || thism.start_time != right.start_time

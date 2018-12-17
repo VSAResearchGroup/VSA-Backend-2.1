@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Data.SqlClient;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
+using Newtonsoft.Json;
 
 namespace Scheduler {
     class Scheduler {
@@ -19,49 +18,102 @@ namespace Scheduler {
         #endregion
 
         #region Class Variables
+        [JsonIgnore]
         private DBConnection DBPlugin;  //Declare the SQL connection to Database
+        [JsonIgnore]
         private CourseNetwork network;   //A network of Courses and their respective prerequisite chains
+        [JsonIgnore]
         private List<MachineNode> machineNodes; //Each node is one Quarter
+        [JsonIgnore]
         private DegreePlan myPlan;       //pull from DB *STORED?* <===== Need to investigate
-        private List<Machine> finalPlan; //output schedule 
-        private Preferences preferences; //currently hard coded, take from UI later <==NEED TO IMPLEMENT==>
-        private List<Job> completedPrior;//starting point, not implemented currently <==WRAP IN STARTING POINT?==>
+        [JsonProperty]
+        private List<Machine> finalPlan; //output schedule
+        [JsonIgnore]
+        private Preferences preferences; //obtainable from the database or by manual entry
+        [JsonIgnore]
+        private List<Job> completedPrior;
+        [JsonProperty]
         private List<Job> unableToSchedule;//list of courses that didn't fit into the schedule
-        private const int QUARTERS = 4; //HARDCODED VARIABLE; Limits to 1 calender year
+        [JsonIgnore]
+        private int quarters = 0; //Preference
+        [JsonIgnore]
+        private bool attendSummer = false; //Preference here for feedback if needed
+        [JsonIgnore]
+        private int yearlength = 0; //either 3 quarters or 4 quarters depending on Summer preference
+        [JsonIgnore]
+        private int years; //derived from dividing the total amount of quarters by the yearlength
         #endregion
 
         #region Constructor
         //------------------------------------------------------------------------------
         // 
-        // default constructor
+        // Constructors
         // 
         //------------------------------------------------------------------------------
-        public Scheduler() {
-            //Establish Variables
-            DBPlugin = new DBConnection();
-            machineNodes = new List<MachineNode>(); //Quarters
-            finalPlan = new List<Machine>(); //Courses
-            completedPrior = new List<Job>(); 
-            unableToSchedule = new List<Job>();
+        public Scheduler()
+        {
+            SetUp(8, true, -1);
+        }
 
-            //Initialize
-            InitMachineNodes();
-            InitMachines();
-            InitYearTwo(); //temporary fix for the second year (WHY? <==INVESTIGATE==>)
-            InitNetwork(); //EXTERNAL MODULE CALL
+        public Scheduler(int quartersDeclared, bool summerIntent)
+        {
+            SetUp(quartersDeclared, summerIntent, -1);
+        }
+
+        public Scheduler(int paramID)
+        {
+            SetUp(-1, false, paramID);
+            MakeStartingPoint();
+            InitDegreePlan();
+            CreateSchedule();
         }
         #endregion
 
         #region Setup
         //------------------------------------------------------------------------------
-        // 
+        // Does the setup of the variables and runs functions common to the constructors
+        //
+        // PARAMID >= 0: Queries the database for preferences and ignores quartersDeclared
+        // and summerIntent. MakeStartingPoint and InitDegreePlan can be automated through
+        // input from the database query
+        //
+        // PARAMID < 0: Runs default constructor for preferences signifying methods must be 
+        // called to run the algorithm. Setup of schedule structure is dependent on 
+        // quartersDeclared and summerIntent. MakeStartingPoint(optional) and 
+        // InitDegreePlan(mandatory) would then need to be invoked to run algorithm
+        //------------------------------------------------------------------------------
+        private void SetUp(int quartersDeclared, bool summerIntent, int paramID)
+        {
+            DBPlugin = new DBConnection();
+            machineNodes = new List<MachineNode>(); //Quarters
+            finalPlan = new List<Machine>(); //Courses
+            completedPrior = new List<Job>();
+            unableToSchedule = new List<Job>();
+
+            if (paramID >= 0)
+            {
+                preferences = new Preferences(paramID);
+                DeterminePlanLength(preferences.getQuarters(), preferences.getSummer());
+            }
+            else
+            {
+                preferences = new Preferences();
+                DeterminePlanLength(quartersDeclared, summerIntent);
+            }
+
+            InitializeMachineNodes();
+            InitMachines();
+            normalizeMachines(); //Disposable after live data
+            InitNetwork();
+        }
+ 
+        //------------------------------------------------------------------------------ 
         // initiates Andrue Cashman's network
-        // 
         //------------------------------------------------------------------------------
         private void InitNetwork()
         {
             //VARIABLES
-            string rawpreqs = DBPlugin.ExecuteToString("Select CourseID, GroupID, PrerequisiteID from Prerequisite for JSON AUTO"); //needs to be translated into a SQL query
+            string rawpreqs = DBPlugin.ExecuteToString("Select CourseID, GroupID, PrerequisiteID from Prerequisite for JSON AUTO");
             string rawcourses = DBPlugin.ExecuteToString("select CourseID from Course for JSON AUTO;");
             //NETWORK BUILD
             network = new CourseNetwork(rawcourses, rawpreqs);
@@ -69,39 +121,149 @@ namespace Scheduler {
          }
 
         //------------------------------------------------------------------------------
-        // to be implemented when we can take in courses from the UI that the user has
-        // taken. we simply skip taking that course in "putcourseonmachine" or
-        // something
+        // Determines length of a school year based on the maximum number of quarters
+        // and the intention to attend summer courses
         //------------------------------------------------------------------------------
-        public void MakeStartingPoint(string s)
+        private void DeterminePlanLength(int quartersDeclared, bool summerIntent)
         {
-
-        }
-
-        //------------------------------------------------------------------------------
-        // initializes machineNodes
-        // 
-        // 
-        //------------------------------------------------------------------------------
-        private void InitMachineNodes()
-        {
-            for (int i = 1; i <= QUARTERS; i++)
+            if (summerIntent)
             {
-                MachineNode m = new MachineNode(0, i);
-                machineNodes.Add(m);
+                attendSummer = true;
+                quarters = quartersDeclared;
+                years = quarters / 4;
+                yearlength = 4;
+            }
+            else
+            {
+                attendSummer = false;
+                quarters = quartersDeclared;
+                years = quarters / 3;
+                yearlength = 3;
             }
         }
 
         //------------------------------------------------------------------------------
-        // retrieves the degree plan we seek. input hard coded from the driver but in 
-        // the future it should be taken from the UI. 
-        // query admissionrequiredcourses
+        // creates a list of jobs that are ignored by the algorithm.
+        // PRIVATE METHOD: starting point is determined by database query (table: ParameterSet)
+        // PUBLIC METHOD: Starting Point determined by strings passed to function
+        //------------------------------------------------------------------------------
+        private void MakeStartingPoint()
+        {
+ 
+            completedPrior = preferences.getPriors();
+
+        }
+
+        public void MakeStartingPoint(string english, string math)
+        {
+            DataTable mathStart = DBPlugin.ExecuteToDT("select CourseID from Course where CourseNumber = '" + math + "' ;");
+            DataTable EnglStart = DBPlugin.ExecuteToDT("select CourseID from Course where CourseNumber = '" + english + "' ;");
+           
+            Job tempJob = new Job((int)mathStart.Rows[0].ItemArray[0]);
+            tempJob.SetScheduled(true);
+            completedPrior.Add(tempJob);
+
+            tempJob = new Job((int)EnglStart.Rows[0].ItemArray[0]);
+            tempJob.SetScheduled(true);
+            completedPrior.Add(tempJob);
+        }
+
+        //------------------------------------------------------------------------------
+        // Creates machineNodes which are representative of the quarters given through 
+        // preferences. For example: if 8 quarters are declared, 8 machineNodes are 
+        // created. 
+        //------------------------------------------------------------------------------
+        private void InitializeMachineNodes()
+        {
+            if (quarters < yearlength)
+            {
+                for (int i = 1; i <= quarters; i++)
+                {
+                    MachineNode m = new MachineNode(0, i);
+                    machineNodes.Add(m);
+                }
+            }
+            else
+            {
+                int quarterCount = 0;
+                while (quarterCount < quarters)
+                {
+                    for (int i = 0; i <= years; i++)
+                    {
+                        for (int j = 1; j <= yearlength; j++)
+                        {
+                            MachineNode m = new MachineNode(i, j);
+                            machineNodes.Add(m);
+                            quarterCount++;
+                            if (quarterCount >= quarters)
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        //------------------------------------------------------------------------------
+        // WARNING!!! - This function can overwrite information. PLEASE READ
+        //
+        // This makes the list of classes available over successive years. Current data
+        // being used is for the duration of one year, therefore this function sets up
+        // the machineNodes in such a way they work off the assumption that classes
+        // will be held at the same time, on the same days, year after year.
+        //------------------------------------------------------------------------------
+        void normalizeMachines()
+        {   //transfer all the same classes to the set of machine nodes
+            if (quarters >= yearlength)
+            {
+                for (int i = yearlength; i < quarters; i++)
+                {
+                    MachineNode oldMn = machineNodes[i % yearlength];
+                    MachineNode newMn = machineNodes[i];
+                    for (int j = 0; j < oldMn.GetMachines().Count; j++)
+                    {
+                        Machine oldMachine = oldMn.GetMachines()[j];
+                        Machine newMachine = new Machine(oldMachine);
+                        newMachine.SetYear(i / yearlength);
+                        newMn.AddMachine(newMachine);
+                    }
+                }
+                return;
+            }
+            else
+            {
+                return;
+            }
+  
+        }
+
+        //------------------------------------------------------------------------------
+        // Queries the database for all the courses needed to complete a specific major
+        // at a specific school.
+        //
+        // PRIVATE METHOD: Major and School are indicated by Preferences. (table: ParameterSet)
+        // PUBLIC METHOD: Major and School are indicated by passed parameters
         //------------------------------------------------------------------------------
         public void InitDegreePlan(int majorID, int schoolID)
         {
             string query = "select CourseID from AdmissionRequiredCourses where MajorID ="
                             + majorID + " and SchoolID = " + schoolID + " order by CourseID ASC ";
-            DataTable dt = DBPlugin.ExecuteToDT(query);
+            planBuilder(DBPlugin.ExecuteToDT(query));
+
+        }
+
+        private void InitDegreePlan()
+        {
+            string query = "select CourseID from AdmissionRequiredCourses where MajorID ="
+                + preferences.getMajor() + " and SchoolID = " + preferences.getSchool() + " order by CourseID ASC";
+            planBuilder(DBPlugin.ExecuteToDT(query));
+        }
+
+        //------------------------------------------------------------------------------
+        // HELPER FUNCTION FOR InitDegreePlan
+        // Adds the courses from the query to the list of courses that need to be scheduled
+        //------------------------------------------------------------------------------
+        private void planBuilder(DataTable dt)
+        {
             List<Job> courseNums = new List<Job>();
             foreach (DataRow row in dt.Rows)
             {
@@ -112,28 +274,41 @@ namespace Scheduler {
         }
 
         //------------------------------------------------------------------------------
-        // create a query that will pull all the different machines
-        // which means getting every single time slot
-        // distinct year, quarter, time, and set of DayTimes
+        // WARNING!! --Please Read SPECIAL NOTE below--
+        // Runs a query which pulls all the courses that exist in CourseTime. Conceptually,
+        // this creates a list of every class that has been offered. Details like the 
+        // Course ID, the time the class starts, the time the class ends, days offered,
+        // quarter offered, and the section ID or collected to their respective 
+        // counterparts. This provides a means to reduce the amount of objects being handled
+        // and can allow implmentation of day-specific and time-specific preferences.
+        // 
+        // Various checks prevent duplication of machines.
+        //
+        // SPECIAL NOTE: If we have the means to, and are required to do so, of 
+        //               implementing different course offerings on a yearly basis
+        //               this is where we would need to change it. DOING SO WOULD MEAN
+        //               THAT THE FUNCTION, NORMALIZEMACHINES(), WOULD BE INCOMPATIBLE
+        //               WITH THIS ALGORITHM.
         //------------------------------------------------------------------------------
         private void InitMachines()
         {
             string query = "select CourseID, StartTimeID, EndTimeID, DayID, QuarterID, SectionID from CourseTime order by CourseID ASC;";
-
             DataTable dt = DBPlugin.ExecuteToDT(query);
-            Machine dummyMachine = new Machine();
-            DayTime dummyDayTime = new DayTime();
             int dt_size = dt.Rows.Count - 1;
             DataRow dr = dt.Rows[dt_size];
-            int currentCourse = (int)dr.ItemArray[0];
-            int currentQuarter = (int)dr.ItemArray[4];
-            int currentSection = (int)dr.ItemArray[5];
+
+            //Temporary Machine Variables
+            Machine dummyMachine = new Machine();
+            DayTime dummyDayTime = new DayTime();
             int course = 0;
             int start = 0;
             int end = 0;
             int day = 0;
             int quarter = 0;
             int section = 0;
+            int currentCourse = (int)dr.ItemArray[0];  //USED FOR PEAKING THE NEXT ROW
+            int currentQuarter = (int)dr.ItemArray[4]; //USED FOR PEAKING THE NEXT ROW
+            int currentSection = (int)dr.ItemArray[5]; //USED FOR PEAKING THE NEXT ROW
 
             //Treats the information gained from the query like a FILO object
             while (dt_size >= 0)
@@ -144,28 +319,27 @@ namespace Scheduler {
                     dr.ItemArray[2] == DBNull.Value || dr.ItemArray[3] == DBNull.Value ||
                     dr.ItemArray[4] == DBNull.Value || dr.ItemArray[5] == DBNull.Value)
                 {
-                    dt_size--;
+                    dt_size--; //IF any portion is null, then the row is discarded entirely.
                     continue;
                 }
-
+                //going to have to do the same with year probably; Andrue Note: Most likely the case
                 course = (int)dr.ItemArray[0];
-                section = (int)dr.ItemArray[5];
-                quarter = (int)dr.ItemArray[4];
-                //going to have to do the same with year probably
-
-                //same course but different section is a different machine
-                //different course is a different machine
-                if ((currentCourse == course && (currentSection != section || currentQuarter != quarter)) || (currentCourse != course))
-                {
-                    dummyMachine = new Machine();
-                    currentCourse = (int)dr.ItemArray[0];
-                    currentSection = (int)dr.ItemArray[5];
-                    currentQuarter = (int)dr.ItemArray[4];
-                }
-
                 start = (int)dr.ItemArray[1];
                 end = (int)dr.ItemArray[2];
                 day = (int)dr.ItemArray[3];
+                quarter = (int)dr.ItemArray[4];
+                section = (int)dr.ItemArray[5];
+
+                //same course but different section OR different quarter is a different machine
+                //different course is a different machine 
+                if ((currentCourse == course && (currentSection != section || currentQuarter != quarter)) || (currentCourse != course))
+                {
+                    dummyMachine = new Machine(); //creates a new machine to be used
+                    currentCourse = (int)dr.ItemArray[0];
+                    currentQuarter = (int)dr.ItemArray[4];
+                    currentSection = (int)dr.ItemArray[5];
+                }
+
                 dummyDayTime = new DayTime();
                 dummyDayTime.SetDayTime(day, start, end);
                 dummyMachine.AddDayTime(dummyDayTime);
@@ -175,71 +349,81 @@ namespace Scheduler {
                 //(different course) OR (same course and (different section OR dif qtr))
                 //Andrue Note: Maybe isolate these arguments into helper functions for ease-of-use?
                 //if (itself(?)) OR (not same course) OR (IS course but NOT SAME Section OR Quarter)
-                if (dt_size == 0 || ((int)dt.Rows[dt_size - 1].ItemArray[0] != currentCourse ||
-                    ((int)dt.Rows[dt_size - 1].ItemArray[0] == currentCourse && 
-                    ((int)dt.Rows[dt_size - 1].ItemArray[5] != currentSection) 
-                    || (int)dt.Rows[dt_size - 1].ItemArray[4] != currentQuarter)))
+                int next = dt_size - 1;
+                if (dt_size == 0 || ((int)dt.Rows[next].ItemArray[0] != currentCourse ||
+                    ((int)dt.Rows[next].ItemArray[0] == currentCourse &&
+                    ((int)dt.Rows[next].ItemArray[5] != currentSection)
+                    || (int)dt.Rows[next].ItemArray[4] != currentQuarter)))
                 {
-                    dummyMachine.AddJob(new Job(course)); //adds job
-                    for (int i = 0; i < machineNodes.Count; i++)
-                    {
-                        MachineNode mn = machineNodes[i];
-                        List<Machine> machines = mn.GetMachines();
-                        if (machines.Count > 0)
-                        {
-                            for (int j = 0; j < machines.Count; j++)
-                            {
-                                Machine m = machines[j];
-                                if (m == dummyMachine)
-                                { //found the machine, just add job
-                                    m.AddJob(new Job(course));
-                                }
-                                else if (dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter()))
-                                { //machine does not exist, add it in
-                                    machines.Add(dummyMachine);
-                                    break;
-                                }
-                            }
-                        }
-                        else if (dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter()))
-                        {
-                            machines.Add(dummyMachine);
-                            break;
-                        }
-                        else //in the instance that machines == 0 and either year or quarter were different 
-                        {
-                            /*
-                            Console.WriteLine("Dummy Machine Year: " + dummyMachine.GetYear());
-                            Console.WriteLine("Dummy Machine Quarter: " + dummyMachine.GetQuarter());
-                            Console.WriteLine("mn Year: " + mn.GetYear());
-                            Console.WriteLine("mn Quarter: " + mn.GetQuarter());
-                            Console.WriteLine('\n');
-                            */
-                        }
-                    }
+                    addMachine(dummyMachine, course);
                 }
                 dt_size--;
             }
-            /*
-            //print machines for testing; unnecessary
-            for (int i = 0; i < machineNodes.Count; i++) {
+        }
+
+        //------------------------------------------------------------------------------
+        // HELPER FUNCTION FOR INITMACHINES()
+        //
+        // Adds a machine to the machine list for offered courses by first doing a search
+        // amongst the machineNodes if the Course already exists there and acts 
+        // accordingly.
+        //------------------------------------------------------------------------------
+        void addMachine(Machine dummyMachine, int course)
+        {
+            dummyMachine.AddJob(new Job(course)); //adds job
+            for (int i = 0; i < machineNodes.Count; i++)
+            {
                 MachineNode mn = machineNodes[i];
                 List<Machine> machines = mn.GetMachines();
-                Console.WriteLine("Quarter: " + mn.GetQuarter());
-                for (int j = 0; j < machines.Count; j++) {
-                    Machine m = machines[j];
-                    m.Print();
+                if (machines.Count > 0)
+                {
+                    for (int j = 0; j < machines.Count; j++)
+                    {
+                        Machine m = machines[j];
+                        if (m == dummyMachine)
+                        { //found the machine, just add job
+                            m.AddJob(new Job(course));
+                            break;
+                        }
+                        else if (dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter()))
+                        { //machine does not exist, add it in
+                             machines.Add(dummyMachine);
+                             break;
+                        }
+                    }
+                }
+                else if (dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter()))
+                {
+                     machines.Add(dummyMachine);
+                     break;
+                }
+                else //in the instance that machines == 0 and either year or quarter were different 
+                {
+                    //NOTE: This isn't so much an error as a bookkeeping check. Because CourseTime contains only 1 year
+                    //      machines dated beyond the first year throw this error. So this is a database issue.
+                    /*
+                     Console.WriteLine("Dummy Machine Year: " + dummyMachine.GetYear());
+                     Console.WriteLine("Dummy Machine Quarter: " + dummyMachine.GetQuarter());
+                     Console.WriteLine("Dummy Course ID: " + course);
+                     Console.WriteLine("mn Year: " + mn.GetYear());
+                     Console.WriteLine("mn Quarter: " + mn.GetQuarter());
+                     Console.WriteLine('\n');
+                     */
                 }
             }
-            */
-        }
+        } 
         #endregion
 
         #region Scheduling Algorithm
         //------------------------------------------------------------------------------
-        // 
-        // creates schedule by looping through all the major courses
-        // 
+        // Creates a Schedule based on the required courses that need to be scheduled
+        // (given by the function, InitDegreePlan().
+        //
+        // SPECIAL NOTE: This is most likely the entry point for where we would need
+        //               to implement electives or optional courses should we need to
+        //               implement those. 
+        //
+        // Afterwards, this course returns the resulting schedule.
         //------------------------------------------------------------------------------
         public List<Machine> CreateSchedule()
         {
@@ -255,9 +439,11 @@ namespace Scheduler {
         }
     
         //------------------------------------------------------------------------------
-        // similar to depth first search algorithm. Does the action of searching through
-        // network and scheduling prerequisites before scheduling the class
-        // 
+        // Uses recursive calls to schedule prerequisites of the passed job before 
+        // scheduling the job itself.
+        //
+        // If for some reason a course cannot be scheduled (due to scheduling conflicts)
+        // then that course is added a supplmentary list of unscheduled coursees.
         //------------------------------------------------------------------------------
         private void ScheduleCourse(Job job)
         {
@@ -274,7 +460,6 @@ namespace Scheduler {
             if (PrereqsExist(groups) && !job.GetPrerequisitesScheduled())
             {   //if j does not have prerequisites (OR its prerequisites have been scheduled) schedule j  
                 //schedule j's prerequisites by getting shortest group and whatnot
-
                 int shortest = GetShortestGroup(groups); //FIND GROUP WITH LEAST PREREQUISITES
                 List<CourseNode> group = groups[shortest].prereqs; //GET LIST OF PREREQUISITES 
 
@@ -306,6 +491,19 @@ namespace Scheduler {
         }
 
         //------------------------------------------------------------------------------
+        // Puts a course into the schedule by first checking the course's most
+        // immediate prerequisite that has been scheduled and starting from the next
+        // nearest schedulable machineNode. From the starting point the course is then
+        // scheduled according to preferences.
+        // 
+        // SPECIAL NOTE: As Polina writes below, this is indeed a perfect function to
+        //               implement several preferences invloved with courses and scheduling.
+        //               Namely, Courses per quarter, day preferences, and timeOfDay preferences.
+        //               I took the liberty of labeling the best spots to place these.
+        //               Additionally, should Machines ever have a CoreCourse, or other attributes
+        //               (Diversity, Humanities, etc.) checks could be placed in this function
+        //               to schedule those courses.
+        // 
         // does the actual action of putting a course on a machine; this will be the hub
         // for implementing preferences, not all are implemented at the moment; also,
         // right now unscheduled courses are simply going into a list but if you were to 
@@ -324,10 +522,10 @@ namespace Scheduler {
             //if no prereqs then schedule at any time
             if (PrereqsExist(groups)) //CHECKS FOR NULL
             { //this is if there are prereqs
-                int[] yq = GetMostRecentPrereq(groups); //<---INVESTIGATE
+                int[] yq = GetMostRecentPrereq(groups); 
 
-                mostRecentPrereqYear = yq[0]; //HARDCODED?
-                mostRecentPrereqQuarter = yq[1]; //HARDCODED?
+                mostRecentPrereqYear = yq[0]; 
+                mostRecentPrereqQuarter = yq[1]; 
 
                 //ERROR CHECK
                 if (mostRecentPrereqQuarter == -1 || mostRecentPrereqYear == -1)
@@ -339,9 +537,7 @@ namespace Scheduler {
                 //schedule 1 or more quarters after, mind the year <--(?)
                 //schedule on nearest available machine
                 //start i at whatever quarter you calculate, not simply zero
-
                 start = (mostRecentPrereqYear * 4 + mostRecentPrereqQuarter - 1) + 1;
-
             }
             #endregion
 
@@ -350,7 +546,7 @@ namespace Scheduler {
             {
                 MachineNode mn = machineNodes[i];
                 //if machine node exeeds preferences continue to next node
-                if (mn.GetClassesScheduled() > 3)
+                if (mn.GetClassesScheduled() > 3) //<<---------------------------- TOTAL COURSES PER QUARTER PREFERENCE(?)
                 {
                     continue;
                 }
@@ -358,6 +554,7 @@ namespace Scheduler {
 
                 for (int k = 0; k < machines.Count; k++)
                 {
+                    //<<----------------------------INSERT DAY/TIME PREFERENCE AND CHECK AGAINST IT
                     Machine m = machines[k];
                     if (m.CanDoJob(j) && !m.CheckInUse())
                     { //if not in use and it can do the job
@@ -381,14 +578,15 @@ namespace Scheduler {
 
         #region Results
         //------------------------------------------------------------------------------
-        // PASSES busy machines to driver as final plan. in the future, it will be
-        // serialized and passed to UI
+        // This returns a list of the courses that have been scheduled
         //------------------------------------------------------------------------------
-        private List<Machine> GetBusyMachines()
+        public List<Machine> GetBusyMachines()
         {
             List<Machine> busy = new List<Machine>();
-            for (int i = 0; i < machineNodes.Capacity; i++)
+            for (int i = 0; i < machineNodes.Count; i++)
             {
+                //Console.WriteLine(machineNodes.Count);
+                //Console.WriteLine(machineNodes[i].GetYear() + " " + machineNodes[i].GetQuarter());
                 List<Machine> machines = machineNodes[i].GetAllScheduledMachines();
                 for (int j = 0; j < machines.Count; j++)
                 {
@@ -399,8 +597,7 @@ namespace Scheduler {
         }
 
         //------------------------------------------------------------------------------
-        // PASSES unscheduled machines to driver as final plan. in the future, it will 
-        // be serialized and passed to UI
+        // This returns a list of courses that were not scheduled.
         //------------------------------------------------------------------------------
         public List<Job> GetUnscheduledCourses()
         {
@@ -416,6 +613,20 @@ namespace Scheduler {
         //------------------------------------------------------------------------------
         private bool IsScheduled(Job j)
         {
+            if (completedPrior != null)
+            {
+                if (completedPrior.Count > 0)
+                {
+                    for (int i = 0; i < completedPrior.Count; i++)
+                    {
+                        if (j.GetID() == completedPrior[i].GetID())
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
             for (int i = 0; i < finalPlan.Count; i++)
             {
                 Machine m = finalPlan[i];
@@ -431,15 +642,18 @@ namespace Scheduler {
         // checks if prerequisite exists; this function can be eliminated, I just didn't
         // quite understand why cashman network had so many lists of lists.
         // 
-        //THIS IS A GOOD CHECK AGAINST UNNECCESSARY WORK
+        // THIS IS A GOOD CHECK AGAINST UNNECCESSARY WORK 
         //------------------------------------------------------------------------------
         private bool PrereqsExist(List<CourseNode> groups)
         {
-            for (int i = 0; i < groups.Count; i++)
+            if (groups != null)
             {
-                if (groups[i].prereqs != null)
+                for (int i = 0; i < groups.Count; i++)
                 {
-                    return true;
+                    if (groups[i].prereqs != null)
+                    {
+                        return true;
+                    }
                 }
             }
             return false;
@@ -530,7 +744,6 @@ namespace Scheduler {
         //------------------------------------------------------------------------------
         // find by retrieving job and looking at when it was scheduled
         // only called if the job actually has prerequisites
-        // 
         //------------------------------------------------------------------------------
         private int[] GetMostRecentPrereq(List<CourseNode> groups)
         {
@@ -578,69 +791,6 @@ namespace Scheduler {
                 }
             }//so now we have the shortest list
             return shortest;
-        }
-        #endregion
-
-        #region Hardcorded & Old Notes
-        //------------------------------------------------------------------------------
-        // temporary until we have more data, better data
-        // 
-        // 
-        //------------------------------------------------------------------------------
-        private void InitYearTwo()
-        {
-            //init more machine nodes for the next year
-            for (int i = 1; i <= QUARTERS; i++)
-            {
-                MachineNode m = new MachineNode(1, i);
-                machineNodes.Add(m);
-            }
-            //transfer all the same classes to the set of machine nodes
-            for (int i = 4; i < 8; i++)
-            {
-                MachineNode oldMn = machineNodes[i - 4];
-                MachineNode newMn = machineNodes[i];
-                for (int j = 0; j < oldMn.GetMachines().Count; j++)
-                {
-                    Machine oldMachine = oldMn.GetMachines()[j];
-                    Machine newMachine = new Machine(oldMachine);
-                    newMachine.SetYear(1);
-                    newMn.AddMachine(newMachine);
-                }
-            }
-        }
-        /*
-            •	Being scheduled during the summer   (WILL IMPLEMENT THIS QUARTER)
-            •	Maximum number of core courses per quarter   (WILL NOT IMPLEMENT THIS QUARTER)
-            •	How many quarters you’d like to spread the plan over (MAX of 16)   (WILL NOT IMPLEMENT THIS QUARTER)
-            •	Time interval for when a person is available to go to 
-                        class. For example, they are available 8AM-1PM.
-                        LOOK AT TABLE TimeSlot   (WILL NOT IMPLEMENT THIS QUARTER)
-            •	Credits they would like to take per quarter.   (WILL IMPLEMENT THIS QUARTER)
-            •	starting quarter of plan. [1,2,3,4]  (WILL IMPLEMENT THIS QUARTER)
-
-        */
-        //------------------------------------------------------------------------------
-        // hard coded now, take from UI later
-        //•	Being scheduled during the summer(NOT IMPLEMENTED)
-        //•	Maximum number of core courses per quarter(NOT IMPLEMENTED)
-        //•	How many quarters you’d like to spread the plan over(MAX of 16)
-        //                                                         (NOT IMPLEMENTED)
-        //•	Time interval for when a person is available to go to
-        //               class. For example, they are available 8AM-1PM.
-        //              LOOK AT TABLE TimeSlot(NOT IMPLEMENTED)
-        //•	Credits they would like to take per quarter.   (IMPLEMENTED)
-        //•	starting quarter of plan. [1,2,3,4]  (NOT IMPLEMENTED)
-        // 
-        //------------------------------------------------------------------------------
-        private void CreatePreferences() {
-            preferences = new Preferences();
-            preferences.AddPreference("SUMMER", false);
-            preferences.AddPreference("CORE_PER_QUARTER", 10);
-            preferences.AddPreference("MAX_QUARTERS", 16);
-            preferences.AddPreference("TIME_INTERVAL", new DayTime(1, 70, 130)); //do a whole bunch?
-            preferences.AddPreference("CREDITS_PER_QUARTER", 15);
-            preferences.AddPreference("STARTING_QUARTER", 2);
         }
         #endregion
     }
