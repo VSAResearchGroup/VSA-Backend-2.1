@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Scheduler {
     class Machine {
@@ -17,19 +17,23 @@ namespace Scheduler {
         #endregion
 
         #region Variables
+        [JsonIgnore]
         private bool inUse; //Not sure what this is for
+        [JsonProperty]
         private int year;
+        [JsonProperty]
         private int quarter;
+        [JsonIgnore]
         private List<Job> jobs; //READ: The courses associated to this machine(?)
+        [JsonProperty]
         private Job currentJobProcessing;
+        [JsonProperty]
         private List<DayTime> dateTime; //datetimes from class?
         #endregion
 
         #region Constructors
         //------------------------------------------------------------------------------
-        // 
         // default constructor
-        // 
         //------------------------------------------------------------------------------
         public Machine() {
             this.year = 0;
@@ -41,9 +45,7 @@ namespace Scheduler {
         }
 
         //------------------------------------------------------------------------------
-        // 
         // constructor with data
-        // 
         //------------------------------------------------------------------------------
         public Machine(int year, int quarter, List<DayTime> dt, List<Job> jobs) {
             this.year = year;
@@ -55,9 +57,7 @@ namespace Scheduler {
         }
 
         //------------------------------------------------------------------------------
-        // 
-        // copy constructor; i dont think this is used
-        // 
+        // copy constructor
         //------------------------------------------------------------------------------
         public Machine(Machine m) {
             this.year = m.year;
@@ -69,11 +69,9 @@ namespace Scheduler {
         }
         #endregion
 
-        #region Needs Documentation
         //------------------------------------------------------------------------------
-        // 
-        // checks if this job is in the list of the jobs it can process; used by
-        // scheduler
+        // checks if this job is in the list of the jobs on thhis particular machine
+        // used by the scheduler to check if a course should be scheduled
         //------------------------------------------------------------------------------
         public bool CanDoJob(Job job) {
             for(int i = 0; i < jobs.Count; i++) {
@@ -83,35 +81,6 @@ namespace Scheduler {
             }
             return false;
         }
-        #endregion
-        
-        #region Dead Code?
-        //------------------------------------------------------------------------------
-        // 
-        // used originally; not used at the moment
-        // 
-        //------------------------------------------------------------------------------
-        public List<int> GetStartTimes() {
-            List<int> start = new List<int>();
-            for (int i = 0; i < dateTime.Count; i++) {
-                start.Add(dateTime[i].GetStartTime());
-            }
-            return start;
-        }
-
-        //------------------------------------------------------------------------------
-        // 
-        // used originally; not used at the moment
-        // 
-        //------------------------------------------------------------------------------
-        public List<int> GetEndTimes() {
-            List<int> end = new List<int>();
-            for (int i = 0; i < dateTime.Count; i++) {
-                end.Add(dateTime[i].GetStartTime());
-            }
-            return end;
-        }
-        #endregion
 
         #region Status Check (Getters)
         //------------------------------------------------------------------------------
@@ -236,30 +205,6 @@ namespace Scheduler {
         #region Display Methods
         //------------------------------------------------------------------------------
         // 
-        // prints all the jobs
-        // 
-        //------------------------------------------------------------------------------
-        public void Print() {
-            Console.WriteLine("-----------------------------------");
-            Console.WriteLine("Year: " + year);
-            Console.WriteLine("Quarter: " + quarter);
-            Console.WriteLine("Course ID:");
-            for (int i = 0; i < jobs.Count; i++) {
-                Job j = jobs[i];
-                Console.WriteLine(j.GetID());
-            }
-            Console.WriteLine("DayTimes:");
-            for (int i = 0; i < dateTime.Count; i++) {
-                DayTime dt = dateTime[i];
-                Console.WriteLine("Day: " + dt.GetDay());
-                Console.WriteLine("Start time: " + dt.GetStartTime());
-                Console.WriteLine("End time: " + dt.GetEndTime());
-            }
-            Console.WriteLine("-----------------------------------");
-        }
-
-        //------------------------------------------------------------------------------
-        // 
         // prints just one job
         // 
         //------------------------------------------------------------------------------
@@ -283,7 +228,7 @@ namespace Scheduler {
         #region Linear Search for DayTime
         //------------------------------------------------------------------------------
         // 
-        // checks if the day time is contained
+        // checks if the day time is contained in the machine, used to check for Overlaps
         // 
         //------------------------------------------------------------------------------
         private bool ContainsDayTime(List<DayTime> times, DayTime dt) {
@@ -299,11 +244,17 @@ namespace Scheduler {
 
         #region Comparison Methods
         //------------------------------------------------------------------------------
-        // 
         // equality
-        // 
         //------------------------------------------------------------------------------
         public static bool operator ==(Machine thism, Machine right) {
+            if (object.ReferenceEquals(thism, right))
+            {
+                return true;
+            }
+            if (object.ReferenceEquals(thism, null) || object.ReferenceEquals(right, null))
+            {
+                return false;
+            }
             if (thism.quarter != right.quarter || thism.year != right.year
                 || thism.dateTime.Count != right.dateTime.Count) {
                 return false;
@@ -316,31 +267,18 @@ namespace Scheduler {
             return true;
         }
 
-        //------------------------------------------------------------------------------
-        // 
-        // equality
-        // 
-        //------------------------------------------------------------------------------
         public static bool operator !=(Machine thism, Machine right) {
             return !(thism == right);
         }
 
-        //------------------------------------------------------------------------------
-        // 
-        // equality
-        // 
-        //------------------------------------------------------------------------------
         public override bool Equals(object obj)
         {
-            Machine j = obj as Machine;
-            if (j == null)
-            {
-                return false;
-            }
-            else
-            {
-                return j == this;
-            }
+            return this == (obj as Machine);
+        }
+
+        public bool Equals(Machine obj)
+        {
+            return this == obj;
         }
         #endregion
     }

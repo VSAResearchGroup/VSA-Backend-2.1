@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Scheduler {
     class MachineNode {
@@ -17,9 +17,10 @@ namespace Scheduler {
         private int creditsScheduled; //Should keep track of all credits
         private int majorCreditsScheduled; //Should keep track of required courses
         private List<Machine> machines; //List of courses
+        [JsonProperty]
         private int year; //The year this "MachineNode" is acting on
+        [JsonProperty]
         private int quarter; //THe quarter the "MachineNode" is acting on
-        private Preferences preferences; //Looks obvious enough
         private int classesScheduled; //Total classes scheduled
         #endregion
 
@@ -36,21 +37,6 @@ namespace Scheduler {
             creditsScheduled = 0;
             majorCreditsScheduled = 0;
             classesScheduled = 0;
-            preferences = new Preferences();
-        }
-
-        //------------------------------------------------------------------------------
-        // 
-        // creates machine node from scratch
-        // 
-        //------------------------------------------------------------------------------
-        public MachineNode(List<Machine> m, int year, int quarter, Preferences p) {
-            this.year = year;
-            this.quarter = quarter;
-            machines = m;
-            creditsScheduled = 0;
-            majorCreditsScheduled = 0;
-            preferences = p;
         }
         #endregion
 
@@ -159,40 +145,6 @@ namespace Scheduler {
         public void RemoveMachine(Machine x)
         {
             if (machines.Contains(x)) machines.Remove(x);
-        }
-        #endregion
-
-        #region Dead Code(?)
-        //------------------------------------------------------------------------------
-        // 
-        // not actually used because the scheduler is in charge of this; I will keep it
-        // here in case it is possibly better to delegate it to this class
-        //------------------------------------------------------------------------------
-        public void ScheduleMachine(Machine x, Job j) {
-            if (machines.Contains(x)) {
-                int num = machines.IndexOf(x);
-                Machine m = machines[num];
-                if (!m.CheckInUse()) {
-                    m.SetInUse(true);
-                    m.SetCurrentJobProcessing(j);
-                } else {
-                    Console.WriteLine("Cannot schedule -- machine is busy");
-                }
-            }
-        }
-
-        //------------------------------------------------------------------------------
-        // 
-        // not used but here for extendability
-        // 
-        //------------------------------------------------------------------------------
-        public void UnscheduleMachine(Machine x) {
-            if(machines.Contains(x)) {
-                int num = machines.IndexOf(x);
-                Machine m = machines[num];
-                m.SetInUse(false);
-                m.SetCurrentJobProcessing(null);
-            }
         }
         #endregion
     }

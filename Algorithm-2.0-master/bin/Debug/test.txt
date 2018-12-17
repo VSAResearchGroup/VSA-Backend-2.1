@@ -1,0 +1,552 @@
+{
+  "Courses": [
+    {
+      "Year": 0,
+      "Quarter": 1,
+      "CourseID": 897,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 2,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 3,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 4,
+          "StartTime": 47,
+          "EndTime": 53
+        }
+      ]
+    },
+    {
+      "Year": 0,
+      "Quarter": 1,
+      "CourseID": 253,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 3,
+          "StartTime": 54,
+          "EndTime": 60
+        }
+      ]
+    },
+    {
+      "Year": 0,
+      "Quarter": 1,
+      "CourseID": 25,
+      "DateTimes": [
+        {
+          "Day": 2,
+          "StartTime": 61,
+          "EndTime": 74
+        },
+        {
+          "Day": 4,
+          "StartTime": 61,
+          "EndTime": 74
+        }
+      ]
+    },
+    {
+      "Year": 0,
+      "Quarter": 2,
+      "CourseID": 901,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 2,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 3,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 4,
+          "StartTime": 47,
+          "EndTime": 53
+        }
+      ]
+    },
+    {
+      "Year": 0,
+      "Quarter": 2,
+      "CourseID": 31,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 54,
+          "EndTime": 67
+        },
+        {
+          "Day": 3,
+          "StartTime": 54,
+          "EndTime": 67
+        }
+      ]
+    },
+    {
+      "Year": 0,
+      "Quarter": 3,
+      "CourseID": 902,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 2,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 3,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 4,
+          "StartTime": 47,
+          "EndTime": 53
+        }
+      ]
+    },
+    {
+      "Year": 0,
+      "Quarter": 3,
+      "CourseID": 32,
+      "DateTimes": [
+        {
+          "Day": 2,
+          "StartTime": 54,
+          "EndTime": 67
+        },
+        {
+          "Day": 4,
+          "StartTime": 54,
+          "EndTime": 67
+        }
+      ]
+    },
+    {
+      "Year": 1,
+      "Quarter": 1,
+      "CourseID": 906,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 61,
+          "EndTime": 67
+        },
+        {
+          "Day": 2,
+          "StartTime": 61,
+          "EndTime": 67
+        },
+        {
+          "Day": 3,
+          "StartTime": 61,
+          "EndTime": 67
+        },
+        {
+          "Day": 4,
+          "StartTime": 61,
+          "EndTime": 67
+        }
+      ]
+    },
+    {
+      "Year": 1,
+      "Quarter": 1,
+      "CourseID": 451,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 2,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 3,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 4,
+          "StartTime": 54,
+          "EndTime": 60
+        }
+      ]
+    },
+    {
+      "Year": 1,
+      "Quarter": 1,
+      "CourseID": 33,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 68,
+          "EndTime": 81
+        },
+        {
+          "Day": 3,
+          "StartTime": 68,
+          "EndTime": 81
+        }
+      ]
+    },
+    {
+      "Year": 1,
+      "Quarter": 3,
+      "CourseID": 452,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 61,
+          "EndTime": 67
+        },
+        {
+          "Day": 2,
+          "StartTime": 61,
+          "EndTime": 67
+        },
+        {
+          "Day": 3,
+          "StartTime": 61,
+          "EndTime": 67
+        },
+        {
+          "Day": 4,
+          "StartTime": 61,
+          "EndTime": 67
+        }
+      ]
+    },
+    {
+      "Year": 1,
+      "Quarter": 3,
+      "CourseID": 400,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 2,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 3,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 4,
+          "StartTime": 54,
+          "EndTime": 60
+        }
+      ]
+    },
+    {
+      "Year": 2,
+      "Quarter": 1,
+      "CourseID": 401,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 61,
+          "EndTime": 67
+        },
+        {
+          "Day": 2,
+          "StartTime": 61,
+          "EndTime": 67
+        },
+        {
+          "Day": 3,
+          "StartTime": 61,
+          "EndTime": 67
+        },
+        {
+          "Day": 4,
+          "StartTime": 61,
+          "EndTime": 67
+        }
+      ]
+    },
+    {
+      "Year": 2,
+      "Quarter": 1,
+      "CourseID": 919,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 2,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 3,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 4,
+          "StartTime": 54,
+          "EndTime": 60
+        }
+      ]
+    },
+    {
+      "Year": 2,
+      "Quarter": 3,
+      "CourseID": 42,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 61,
+          "EndTime": 67
+        },
+        {
+          "Day": 2,
+          "StartTime": 61,
+          "EndTime": 67
+        },
+        {
+          "Day": 3,
+          "StartTime": 61,
+          "EndTime": 67
+        },
+        {
+          "Day": 4,
+          "StartTime": 61,
+          "EndTime": 67
+        }
+      ]
+    },
+    {
+      "Year": 2,
+      "Quarter": 3,
+      "CourseID": 1401,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 2,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 3,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 4,
+          "StartTime": 54,
+          "EndTime": 60
+        }
+      ]
+    },
+    {
+      "Year": 2,
+      "Quarter": 3,
+      "CourseID": 254,
+      "DateTimes": [
+        {
+          "Day": 2,
+          "StartTime": 68,
+          "EndTime": 81
+        },
+        {
+          "Day": 4,
+          "StartTime": 68,
+          "EndTime": 81
+        }
+      ]
+    },
+    {
+      "Year": 4,
+      "Quarter": 1,
+      "CourseID": 920,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 2,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 3,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 4,
+          "StartTime": 54,
+          "EndTime": 60
+        }
+      ]
+    },
+    {
+      "Year": 0,
+      "Quarter": 1,
+      "CourseID": 897,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 2,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 3,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 4,
+          "StartTime": 47,
+          "EndTime": 53
+        }
+      ]
+    },
+    {
+      "Year": 0,
+      "Quarter": 1,
+      "CourseID": 253,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 54,
+          "EndTime": 60
+        },
+        {
+          "Day": 3,
+          "StartTime": 54,
+          "EndTime": 60
+        }
+      ]
+    },
+    {
+      "Year": 0,
+      "Quarter": 1,
+      "CourseID": 25,
+      "DateTimes": [
+        {
+          "Day": 2,
+          "StartTime": 61,
+          "EndTime": 74
+        },
+        {
+          "Day": 4,
+          "StartTime": 61,
+          "EndTime": 74
+        }
+      ]
+    },
+    {
+      "Year": 0,
+      "Quarter": 2,
+      "CourseID": 901,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 2,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 3,
+          "StartTime": 47,
+          "EndTime": 53
+        },
+        {
+          "Day": 4,
+          "StartTime": 47,
+          "EndTime": 53
+        }
+      ]
+    },
+    {
+      "Year": 0,
+      "Quarter": 2,
+      "CourseID": 31,
+      "DateTimes": [
+        {
+          "Day": 1,
+          "StartTime": 54,
+          "EndTime": 67
+        },
+        {
+          "Day": 3,
+          "StartTime": 54,
+          "EndTime": 67
+        }
+      ]
+    },
+    {
+      "Year": 0,
+      "Quarter": 3,
+      "CourseID": 32,
+      "DateTimes": [
+        {
+          "Day": 2,
+          "StartTime": 54,
+          "EndTime": 67
+        },
+        {
+          "Day": 4,
+          "StartTime": 54,
+          "EndTime": 67
+        }
+      ]
+    }
+  ]
+}
