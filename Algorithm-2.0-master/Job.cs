@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 
 namespace Scheduler {
-    class Job {
+    public class Job {
         #region NOTES
         /*
          * This appears to be how courses are represented. Each course has an ID,
