@@ -61,6 +61,13 @@ namespace Scheduler {
             SetUp(quartersDeclared, summerIntent, -1);
         }
 
+        public Scheduler(int quartersDeclared, bool summerIntent, int paramId)
+        {
+            SetUp(quartersDeclared, summerIntent, paramId);
+            MakeStartingPoint();
+
+        }
+
         public Scheduler(int paramID)
         {
             SetUp(-1, false, paramID);

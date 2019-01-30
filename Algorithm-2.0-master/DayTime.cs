@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 
 namespace Scheduler {
-    class DayTime {
+    public class DayTime {
         
         [JsonProperty]
         private int day;
