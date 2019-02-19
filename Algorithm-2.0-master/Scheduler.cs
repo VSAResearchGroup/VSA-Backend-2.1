@@ -29,9 +29,9 @@ namespace Scheduler {
         [JsonProperty]
         private List<Machine> finalPlan; //output schedule
         [JsonIgnore]
-        private Preferences preferences; //currently hard coded, take from UI later <==NEED TO IMPLEMENT==>
+        private Preferences preferences; //obtainable from the database or by manual entry
         [JsonIgnore]
-        private List<Job> completedPrior;//starting point, not implemented currently <==WRAP IN STARTING POINT?==>
+        private List<Job> completedPrior;
         [JsonProperty]
         private List<Job> unableToSchedule;//list of courses that didn't fit into the schedule
         [JsonIgnore]
@@ -52,20 +52,12 @@ namespace Scheduler {
         //------------------------------------------------------------------------------
         public Scheduler()
         {
-
             SetUp(8, true, -1);
         }
 
         public Scheduler(int quartersDeclared, bool summerIntent)
         {
             SetUp(quartersDeclared, summerIntent, -1);
-        }
-
-        public Scheduler(int quartersDeclared, bool summerIntent, int paramId)
-        {
-            SetUp(quartersDeclared, summerIntent, paramId);
-            MakeStartingPoint();
-
         }
 
         public Scheduler(int paramID)
@@ -157,7 +149,9 @@ namespace Scheduler {
         //------------------------------------------------------------------------------
         private void MakeStartingPoint()
         {
+ 
             completedPrior = preferences.getPriors();
+
         }
 
         public void MakeStartingPoint(string english, string math)
@@ -619,16 +613,20 @@ namespace Scheduler {
         //------------------------------------------------------------------------------
         private bool IsScheduled(Job j)
         {
-            if (completedPrior.Count > 0)
+            if (completedPrior != null)
             {
-                for (int i = 0; i < completedPrior.Count; i++)
+                if (completedPrior.Count > 0)
                 {
-                    if (j.GetID() == completedPrior[i].GetID())
+                    for (int i = 0; i < completedPrior.Count; i++)
                     {
-                        return true;
+                        if (j.GetID() == completedPrior[i].GetID())
+                        {
+                            return true;
+                        }
                     }
                 }
             }
+
             for (int i = 0; i < finalPlan.Count; i++)
             {
                 Machine m = finalPlan[i];
@@ -648,11 +646,14 @@ namespace Scheduler {
         //------------------------------------------------------------------------------
         private bool PrereqsExist(List<CourseNode> groups)
         {
-            for (int i = 0; i < groups.Count; i++)
+            if (groups != null)
             {
-                if (groups[i].prereqs != null)
+                for (int i = 0; i < groups.Count; i++)
                 {
-                    return true;
+                    if (groups[i].prereqs != null)
+                    {
+                        return true;
+                    }
                 }
             }
             return false;

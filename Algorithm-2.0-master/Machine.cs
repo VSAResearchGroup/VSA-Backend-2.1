@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace Scheduler {
-    public class Machine {
+    class Machine {
         #region NOTES
         /*
          * I'm still not sure what exactly a "Machine" is. My supposition is that a Machine is a course complete
@@ -27,7 +27,7 @@ namespace Scheduler {
         private List<Job> jobs; //READ: The courses associated to this machine(?)
         [JsonProperty]
         private Job currentJobProcessing;
-        [JsonIgnore]
+        [JsonProperty]
         private List<DayTime> dateTime; //datetimes from class?
         #endregion
 
