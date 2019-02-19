@@ -1,7 +1,5 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.Collections.Generic;
-using System.Data;
 
 namespace Scheduler {
     class Preferences {
@@ -23,7 +21,7 @@ namespace Scheduler {
         private string JsonString; //just a local copy, not used for anything important. Good for checking if what you're getting from the DB is correct
         private DBConnection dbHit; //boop...deboop...lets query that database shall we?
         private List<ParameterSet> prefs; //JSON Deserializer needs this to be in a collection even though there will only be one element
-        private List<Job> priors; //used as a collection for completed courses
+        private List<Job> priors; //used as a collection for completed courses, no longer used as of version 2.2
         bool summerIntent; //Since it's currently a VARCHAR in the database this is what we need to change it to
 
         private class CourseNumbers //Used as a deserialized structure for both CompletedCourses and PlacementCourses
@@ -66,9 +64,9 @@ namespace Scheduler {
         {
             dbHit = new DBConnection();
             JsonString = "Data Source = 65.175.68.34; Initial Catalog = vsaDev; Persist Security Info = True; User ID = sa; Password = kD$wg&OUrhfC6AMMq6q5Xh"j;
-            JsonString = dbHit.ExecuteToString("select * from ParameterSet where ID =" + parameterID + "for JSON AUTO;");
+            JsonString = dbHit.ExecuteToString("select * from ParameterSet where ParameterSetID =" + parameterID + "for JSON AUTO;");
             Deserialize();
-            SetPriors();
+            //SetPriors();
             determineSummer();
         }
         #endregion
@@ -102,7 +100,7 @@ namespace Scheduler {
 
         public int getQuarters()
         {
-            return prefs[0].getBudget();
+            return prefs[0].getMaxQuarters();
         }
 
         public bool getSummer()
@@ -112,35 +110,35 @@ namespace Scheduler {
         #endregion
 
         #region Data Interpretation and additional Deserialization
-        //------------------------------------------------------------------------------
-        // Provides the overall starting point based off placement courses and completed
-        // courses.
-        //------------------------------------------------------------------------------
-        private void SetPriors()
-        {
-            priors = new List<Job>();
-            addTopriors(prefs[0].getCompleted());
-            addTopriors(prefs[0].getPlacement());
-        }
+        ////------------------------------------------------------------------------------
+        //// Provides the overall starting point based off placement courses and completed
+        //// courses.
+        ////------------------------------------------------------------------------------
+        //private void SetPriors()
+        //{
+        //    priors = new List<Job>();
+        //    addTopriors(prefs[0].getCompleted());
+        //    addTopriors(prefs[0].getPlacement());
+        //}
 
-        //------------------------------------------------------------------------------
-        // Deserializes the given string into a collection of CourseNumbers which are 
-        // then added into the list of courses to be used as a starting point.
-        //------------------------------------------------------------------------------
-        private void addTopriors(string passed)
-        {
-            if (passed != null)
-            {
-                List<CourseNumbers> courses = JsonConvert.DeserializeObject<List<CourseNumbers>>(passed);
-                for (int i = 0; i < courses.Count; i++)
-                {
-                    DataTable courseID = dbHit.ExecuteToDT("select CourseID from Course where CourseNumber = '" + courses[i].returnCourse() + "' ;");
-                    Job tempJob = new Job((int)courseID.Rows[0].ItemArray[0]);
-                    tempJob.SetScheduled(true);
-                    priors.Add(tempJob);
-                }
-            }
-        }
+        ////------------------------------------------------------------------------------
+        //// Deserializes the given string into a collection of CourseNumbers which are 
+        //// then added into the list of courses to be used as a starting point.
+        ////------------------------------------------------------------------------------
+        //private void addTopriors(string passed)
+        //{
+        //    if (passed != null)
+        //    {
+        //        List<CourseNumbers> courses = JsonConvert.DeserializeObject<List<CourseNumbers>>(passed);
+        //        for (int i = 0; i < courses.Count; i++)
+        //        {
+        //            DataTable courseID = dbHit.ExecuteToDT("select CourseID from Course where CourseNumber = '" + courses[i].returnCourse() + "' ;");
+        //            Job tempJob = new Job((int)courseID.Rows[0].ItemArray[0]);
+        //            tempJob.SetScheduled(true);
+        //            priors.Add(tempJob);
+        //        }
+        //    }
+        //}
 
         //------------------------------------------------------------------------------
         // Mainly used because the database represenetation of the summer preference
@@ -153,12 +151,12 @@ namespace Scheduler {
         private void determineSummer()
         {
             char test = prefs[0].getSummer()[0];
-            Console.WriteLine(test);
+            //Console.WriteLine(test);
             if (test == 'Y' || test == 'y')
             {
                 summerIntent = true;
             }
-            Console.WriteLine(summerIntent);
+            //Console.WriteLine(summerIntent);
         }
         
         #endregion

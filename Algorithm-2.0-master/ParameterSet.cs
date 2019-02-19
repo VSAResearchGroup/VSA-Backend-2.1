@@ -1,9 +1,5 @@
 ﻿using System;
 using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Scheduler
 {
@@ -16,37 +12,39 @@ namespace Scheduler
         // performance
         //------------------------------------------------------------------------------
         [JsonProperty]
-        private int ID { get; set; }
+        private int ParameterSetID { get; set; }
         [JsonProperty]
         private int MajorID { get; set; }
         [JsonProperty]
         private int SchoolID { get; set; }
         [JsonProperty]
-        private int BudgetID { get; set; }
+        private int JobTypeID { get; set; }
         [JsonProperty]
         private int TimePreferenceID { get; set; }
         [JsonProperty]
         private int QuarterPreferenceID { get; set; }
         [JsonProperty]
-        private string CompletedCourses { get; set; }
-        [JsonProperty]
-        private string PlacementCourses { get; set; }
-        [JsonProperty]
         private DateTime DateAdded { get; set; }
         [JsonProperty]
         private DateTime LastDateModified { get; set; }
+        [JsonProperty]
+        private int NumberCoreCoursesPerQuarter { get; set; }
+        [JsonProperty]
+        private int MaxNumberOfQuarters { get; set; }
+        [JsonProperty]
+        private int CreditsPerQuarter { get; set; }
         [JsonProperty]
         private int Status { get; set; }
         [JsonProperty]
         private string SummerPreference { get; set; }
         [JsonProperty]
-        private string EnrollmentType { get; set; }
+        private int EnrollmentType { get; set; }
         #endregion
 
         #region Getters
         public int getID ()
         {
-            return ID;
+            return ParameterSetID;
         }
         public int getMajor()
         {
@@ -56,9 +54,9 @@ namespace Scheduler
         {
             return SchoolID;
         }
-        public int getBudget()
+        public int getJobType()
         {
-            return BudgetID;
+            return JobTypeID;
         }
         public int getTimeP()
         {
@@ -68,19 +66,23 @@ namespace Scheduler
         {
             return QuarterPreferenceID;
         }
-        public string getCompleted()
+        public int getCoreCourse()
         {
-            return CompletedCourses;
+            return NumberCoreCoursesPerQuarter;
         }
-        public string getPlacement()
+        public int getMaxQuarters()
         {
-            return PlacementCourses;
+            return MaxNumberOfQuarters;
+        }
+        public int getCreditsPerQuarter()
+        {
+            return CreditsPerQuarter;
         }
         public string getSummer()
         {
             return SummerPreference;
         }
-        public string getEnrollment()
+        public int getEnrollment()
         {
             return EnrollmentType;
         }

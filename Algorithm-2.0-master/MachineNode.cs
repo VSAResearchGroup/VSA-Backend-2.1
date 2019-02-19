@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Scheduler {
     class MachineNode {
@@ -16,7 +17,9 @@ namespace Scheduler {
         private int creditsScheduled; //Should keep track of all credits
         private int majorCreditsScheduled; //Should keep track of required courses
         private List<Machine> machines; //List of courses
+        [JsonProperty]
         private int year; //The year this "MachineNode" is acting on
+        [JsonProperty]
         private int quarter; //THe quarter the "MachineNode" is acting on
         private int classesScheduled; //Total classes scheduled
         #endregion
