@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 
 namespace Scheduler {
-    class Driver {
+    public class Driver {
         //------------------------------------------------------------------------------
         // The driver is used to run the scheduler. Either Method is a valid means to run
         // the scheduler. Should function calls be made to alter the preferences
