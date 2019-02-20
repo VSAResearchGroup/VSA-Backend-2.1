@@ -4,7 +4,7 @@ using System.Data;
 using Newtonsoft.Json;
 
 namespace Scheduler {
-    class Scheduler {
+    public class Scheduler {
         #region NOTES
         /* This part of the algorithm, understandably, has a lot going on inside of it. THough functional, 
          * I believe that some improvements could be made. For example the SQL stuff region should probably 
@@ -62,7 +62,7 @@ namespace Scheduler {
 
         public Scheduler(int paramID)
         {
-            SetUp(-1, false, paramID);
+            SetUp(8, false, paramID);
             MakeStartingPoint();
             InitDegreePlan();
             CreateSchedule();

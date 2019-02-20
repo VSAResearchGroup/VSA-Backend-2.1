@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Scheduler
 {
-    class DBConnection
+    public class DBConnection
     {
         SqlConnection myConnection;      //Declare the SQL connection to Database
 

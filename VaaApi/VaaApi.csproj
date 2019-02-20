@@ -58,10 +58,6 @@
       <HintPath>..\Algorithm-2.0-master\packages\Newtonsoft.Json.11.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Scheduler, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Algorithm-2.0-master\bin\Debug\Scheduler.exe</HintPath>
-    </Reference>
     <Reference Include="Swashbuckle.Core">
       <HintPath>..\Algorithm-2.0-master\packages\Swashbuckle.Core.5.3.1\lib\net40\Swashbuckle.Core.dll</HintPath>
     </Reference>
@@ -117,6 +113,7 @@
     <Compile Include="App_Start\SwaggerConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\PreferencesController.cs" />
+    <Compile Include="Controllers\RatingController.cs" />
     <Compile Include="Controllers\SchedulesController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -133,6 +130,12 @@
     <None Include="Web.Release.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Algorithm-2.0-master\Scheduler.csproj">
+      <Project>{8c48265c-a39c-49c4-8acd-71b6eb5f7980}</Project>
+      <Name>Scheduler</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

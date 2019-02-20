@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace Scheduler {
-    class Machine {
+   public class Machine {
         #region NOTES
         /*
          * I'm still not sure what exactly a "Machine" is. My supposition is that a Machine is a course complete
