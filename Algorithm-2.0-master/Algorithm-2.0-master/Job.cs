@@ -1,7 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Scheduler {
-    public class Job {
+    class Job {
         #region NOTES
         /*
          * This appears to be how courses are represented. Each course has an ID,
@@ -15,15 +21,10 @@ namespace Scheduler {
         #endregion
 
         #region Class Variables
-        [JsonProperty]
         private int id;
-        [JsonIgnore]
         private bool scheduled;
-        [JsonIgnore]
         private bool prerequisitesScheduled;
-        [JsonIgnore]
         private int quarterScheduled;
-        [JsonIgnore]
         private int yearScheduled;
         //need to implement int credits for the course for preferences purposes
         //need to implement boolean if its a major course or not for preferences purposes
@@ -31,7 +32,9 @@ namespace Scheduler {
 
         #region Constructor
         //------------------------------------------------------------------------------
+        // 
         // constructor
+        // 
         //------------------------------------------------------------------------------
         public Job()
         {
@@ -53,37 +56,45 @@ namespace Scheduler {
 
         #region Getters
         //------------------------------------------------------------------------------
+        // 
         // boolean for scheduled or not
+        // 
         //------------------------------------------------------------------------------
         public bool GetScheduled() {
             return scheduled;
         }
 
         //------------------------------------------------------------------------------
+        // 
         // boolean for if the prerequisites are scheduled
+        // 
         //------------------------------------------------------------------------------
         public bool GetPrerequisitesScheduled() {
             return prerequisitesScheduled;
         }
 
         //------------------------------------------------------------------------------
+        // 
         // getter for wuarter scheduled
+        // 
         //------------------------------------------------------------------------------
         public int GetQuarterScheduled()
         {
             return quarterScheduled;
         }
-
         //------------------------------------------------------------------------------
+        // 
         // getter for year scheduled
+        // 
         //------------------------------------------------------------------------------
         public int GetYearScheduled()
         {
             return yearScheduled;
         }
-
         //------------------------------------------------------------------------------
+        // 
         // getter for id of course; corresponds to what it is in DB
+        // 
         //------------------------------------------------------------------------------
         public int GetID()
         {
@@ -129,9 +140,11 @@ namespace Scheduler {
         }
         #endregion
 
-        #region Comparison Operators
+        #region Comparison Operator
         //------------------------------------------------------------------------------
+        // 
         // equality
+        // 
         //------------------------------------------------------------------------------
         public static bool operator ==(Job thisj, Job right) {
             if(object.ReferenceEquals(thisj, null) || object.ReferenceEquals(right, null)) {
@@ -143,10 +156,20 @@ namespace Scheduler {
             return thisj.Equals(right);
         }
 
+        //------------------------------------------------------------------------------
+        // 
+        // equality
+        // 
+        //------------------------------------------------------------------------------
         public static bool operator !=(Job thisj, Job right) {
             return !(thisj == right);
         }
 
+        //------------------------------------------------------------------------------
+        // 
+        // equality
+        // 
+        //------------------------------------------------------------------------------
         public override bool Equals(object obj) {
             Job j = obj as Job;
             return this.id == j.id;

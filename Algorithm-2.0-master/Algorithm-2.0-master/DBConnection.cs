@@ -1,10 +1,14 @@
-﻿using System.Data.SqlClient;
+﻿using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Data;
 using System.Text;
+using System.IO;
+
 
 namespace Scheduler
 {
-    public class DBConnection
+    class DBConnection
     {
         SqlConnection myConnection;      //Declare the SQL connection to Database
 
