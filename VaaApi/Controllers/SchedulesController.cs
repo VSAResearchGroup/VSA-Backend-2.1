@@ -9,6 +9,7 @@ using Scheduler;
 
 namespace VaaApi.Controllers
 {
+    using System.Data;
     using System.Web.Http.Cors;
     using System.Web.Http.Results;
     using Newtonsoft.Json;
@@ -19,69 +20,36 @@ namespace VaaApi.Controllers
         [EnableCors(origins: "*", headers: "*", methods: "*")]
         public string Get(int id)
         {
-            var scheduler = new Scheduler.Scheduler(id);
-            var schedule = scheduler.CreateSchedule();
             var model = new ScheduleModel
             {
-                Quarters = new List<Quarter>()
+                Quarters = new List<Quarter>(),
+                Id = id
             };
-            int generatedPlanId = 0;
-            var DBPlugin = new DBConnection();
-            try
-            {
-                DBPlugin.ExecuteToString(
-                    $"insert into GeneratedPlan (Name, ParameterSetID, DateAdded, LastDateModified, Status) " +
-                    $"Values ('latest', {id}, '{DateTime.UtcNow}', '{DateTime.UtcNow}', {1})");
-                var insertedId = DBPlugin.ExecuteToString("SELECT IDENT_CURRENT('GeneratedPlan')");
-                generatedPlanId = Convert.ToInt32(insertedId);
-                model.Id = generatedPlanId;
+            var query = "select CourseNumber, QuarterID, YearID, Course.CourseId from StudyPlan" +
+                        " join course on Course.CourseID = StudyPlan.CourseID" +
+                        $" where GeneratedPlanID = {id}";
 
-            }
-            catch (Exception e)
+            var connection = new DBConnection();
+            var results = connection.ExecuteToDT(query);
+            foreach (DataRow row in results.Rows)
             {
-                Console.WriteLine(e);
-                throw;
-            }
-
-            var byYear = schedule.GroupBy(s => s.GetYear());
-            foreach (var kvp in byYear)
-            {
-                var byQuarter = kvp.GroupBy(s => s.GetQuarter());
-                foreach (var quarter in byQuarter)
+                var courseName = (string) row["CourseNumber"];
+                var quarter = (int) row["QuarterID"];
+                var year = (int) row["YearID"];
+                var courseId = (int) row["CourseId"];
+                var quarterItem=model.Quarters.FirstOrDefault(s => s.Id == $"{year}{quarter}" && s.Year == year);
+                if (quarterItem == null)
                 {
-                    var quarterItem = new Quarter
-                    {
-                        Year = kvp.Key,
-                        Title = $"{DateTime.UtcNow.Year+ kvp.Key}-{quarter.Key.ToString()}",
-                        Id = $"{kvp.Key}-{quarter.Key}",
-                        Courses = new List<Course>()
-                    };
-                    model.Quarters.Add(quarterItem);
-
-                    foreach (var course in quarter)
-                    {
-                        var description = course.GetCurrentJobProcessing().GetID().ToString();
-                        quarterItem.Courses.Add(new Course() { Description = description, Id = description, Title = description });
-
-                        try
-                        {
-                            DBPlugin.ExecuteToString(
-                                $"insert into StudyPlan (GeneratedPlanID, QuarterID, YearID, CourseID, DateAdded, LastDateModified) " +
-                                $"Values ({generatedPlanId}, {quarter.Key}, {DateTime.UtcNow.Year+kvp.Key}, {course.GetCurrentJobProcessing().GetID()}, '{DateTime.UtcNow}', '{DateTime.UtcNow}')");
-
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine(e);
-                            throw;
-                        }
-                       
-                    }
-
+                    model.Quarters.Add(new Quarter(){Id = $"{year}{quarter}", Title = $"{year}-{quarter}", Year = year});
+                    quarterItem = model.Quarters.First(s => s.Id == $"{year}{quarter}" && s.Year == year);
                 }
-            }
-            //save the plan if needed
 
+                if (quarterItem.Courses == null)
+                {
+                    quarterItem.Courses = new List<Course>();
+                }
+                quarterItem.Courses.Add(new Course(){Description = courseName+$"({courseId})", Id = courseName, Title = courseName + $"({courseId})" });
+            }
 
             var response = JsonConvert.SerializeObject(model);
             return response;

@@ -144,8 +144,22 @@ namespace Scheduler {
                         //Assign Values
                         targetCourse[groupPath].courseID = targetID;
                         targetCourse[groupPath].groupID = groupPath;
-                        targetCourse[groupPath].prereqs.Add(new CourseNode(courseNetwork[index].prereqs[j], false));
+                        var coursePrereq = FindShortPath(courseNetwork[index].prereqs[j].PrerequisiteCourseID);
+                        courseNetwork[index].prereqs[j].prereqs = coursePrereq;
+                        targetCourse[groupPath].prereqs.Add(new CourseNode(courseNetwork[index].prereqs[j], true));
                     }
+
+                    //var shortestPath = 1;
+                    ////find the path with the least prereqs
+                    //foreach (var courseNode in targetCourse)
+                    //{
+                    //    if (courseNode.prereqs!=null && courseNode.prereqs.Count < targetCourse[shortestPath].prereqs.Count)
+                    //    {
+                    //        shortestPath = courseNode.groupID;
+                    //    }
+                    //}
+
+                    //targetCourse = targetCourse[shortestPath].prereqs;
                 }
             } else {
                 return null; //Course Does Not Exist

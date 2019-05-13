@@ -36,7 +36,9 @@ namespace VaaApi.Controllers
                                          $"MaxNumberOfQuarters, CreditsPerQuarter, SummerPreference, EnrollmentTypeId, Status, LastDateModified) values ({majorId}, {schoolId}, {job}, {1}, {1}, '{DateTime.UtcNow}', {coreCourses}," +
                                          $"{quarters}, {creditPerQuarter}, '{summer}', {enrollment}, {1}, '{DateTime.UtcNow}')");
                 var insertedId = DBPlugin.ExecuteToString("SELECT IDENT_CURRENT('ParameterSet')");
-                return insertedId.ToString();
+                var preferenceId = Convert.ToInt32(insertedId);
+                var insertedSchedule = SaveSchedule(preferenceId);
+                return insertedSchedule.ToString();
             }
             catch (Exception e)
             {
@@ -46,8 +48,72 @@ namespace VaaApi.Controllers
            
         }
 
+        private int SaveSchedule(int id)
+        {
+            var scheduler = new Scheduler.Scheduler(id);
+            var schedule = scheduler.CreateSchedule();
+            int insertedId=0;
+            var model = new ScheduleModel
+            {
+                Quarters = new List<Quarter>()
+            };
+            var DBPlugin = new DBConnection();
+            try
+            {
+                DBPlugin.ExecuteToString(
+                    $"insert into GeneratedPlan (Name, ParameterSetID, DateAdded, LastDateModified, Status) " +
+                    $"Values ('latest', {id}, '{DateTime.UtcNow}', '{DateTime.UtcNow}', {1})");
+                var idString = DBPlugin.ExecuteToString("SELECT IDENT_CURRENT('GeneratedPlan')");
+                insertedId = Convert.ToInt32(idString);
+                model.Id = insertedId;
 
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
 
+            var byYear = schedule.GroupBy(s => s.GetYear());
+            foreach (var kvp in byYear)
+            {
+                var byQuarter = kvp.GroupBy(s => s.GetQuarter());
+                foreach (var quarter in byQuarter)
+                {
+                    var quarterItem = new Quarter
+                    {
+                        Year = kvp.Key,
+                        Title = $"{DateTime.UtcNow.Year + kvp.Key}-{quarter.Key.ToString()}",
+                        Id = $"{kvp.Key}-{quarter.Key}",
+                        Courses = new List<Course>()
+                    };
+                    model.Quarters.Add(quarterItem);
+
+                    foreach (var course in quarter)
+                    {
+                        var description = course.GetCurrentJobProcessing().GetID().ToString();
+                        quarterItem.Courses.Add(new Course() { Description = description, Id = description, Title = description });
+
+                        try
+                        {
+                            DBPlugin.ExecuteToString(
+                                $"insert into StudyPlan (GeneratedPlanID, QuarterID, YearID, CourseID, DateAdded, LastDateModified) " +
+                                $"Values ({insertedId}, {quarter.Key}, {DateTime.UtcNow.Year + kvp.Key}, {course.GetCurrentJobProcessing().GetID()}, '{DateTime.UtcNow}', '{DateTime.UtcNow}')");
+
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                            throw;
+                        }
+
+                    }
+
+                }
+            }
+            //save the plan if needed
+             return insertedId;
+        }
     }
 
     public class CourseObject
