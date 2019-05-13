@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 
 namespace Scheduler {
+    using System;
+
     class DegreePlan {
 
         #region NOTES
@@ -26,6 +28,11 @@ namespace Scheduler {
         public DegreePlan(List<Job> major) {
             plan = new List<List<Job>>();
             //insert values into list[0]
+            foreach (var job in major)
+            {
+                Console.WriteLine($"Prereq courses {job.GetID()}");
+            }
+
             plan.Add(major);
         }
         #endregion

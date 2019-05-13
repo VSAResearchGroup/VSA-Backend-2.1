@@ -62,7 +62,7 @@ namespace Scheduler {
 
         public Scheduler(int paramID)
         {
-            SetUp(8, false, paramID);
+            SetUp(16, false, paramID);
             MakeStartingPoint();
             InitDegreePlan();
             CreateSchedule();
@@ -113,7 +113,7 @@ namespace Scheduler {
         private void InitNetwork()
         {
             //VARIABLES
-            string rawpreqs = DBPlugin.ExecuteToString("Select CourseID, GroupID, PrerequisiteID from Prerequisite for JSON AUTO");
+            string rawpreqs = DBPlugin.ExecuteToString("Select CourseID, GroupID, PrerequisiteID, PrerequisiteCourseID from Prerequisite for JSON AUTO");
             string rawcourses = DBPlugin.ExecuteToString("select CourseID from Course for JSON AUTO;");
             //NETWORK BUILD
             network = new CourseNetwork(rawcourses, rawpreqs);
@@ -466,7 +466,7 @@ namespace Scheduler {
                 List<Job> jobsToBeScheduled = new List<Job>();
                 for (int j = 0; j < group.Count; j++)  //TRANSFER PREREQUSITE LIST INTO MORE JOBS
                 {
-                    Job myJob = new Job(group[j].prerequisiteID);
+                    Job myJob = new Job(group[j].PrerequisiteCourseID);
                     jobsToBeScheduled.Add(myJob);
                 }//now we have a list full of jobs to be scheduled
 
@@ -760,7 +760,7 @@ namespace Scheduler {
                         continue;
                     }
 
-                    if (m.GetCurrentJobProcessing().GetID() == groups[i].prereqs[0].prerequisiteID)
+                    if (m.GetCurrentJobProcessing().GetID() == groups[i].prereqs[0].PrerequisiteCourseID)
                     { //found the course
                         if (m.GetCurrentJobProcessing().GetYearScheduled() > mostRecentPrereqYear ||
                            (m.GetCurrentJobProcessing().GetYearScheduled() == mostRecentPrereqYear
@@ -782,15 +782,21 @@ namespace Scheduler {
         //------------------------------------------------------------------------------
         private int GetShortestGroup(List<CourseNode> groups)
         {
+            if (groups == null)
+            {
+                return 0;
+            }
             int shortest = int.MaxValue;
+            int shortestGroup = int.MaxValue;
             for (int j = 1; j < groups.Count; j++)
             { //find the shortest group that is not null
-                if (groups[j].prereqs.Count < shortest && groups[j].prereqs != null)
+                var groupCount = 1 + GetShortestGroup(groups[j].prereqs);
+                if (groupCount < shortest)
                 {
-                    shortest = j;
+                    shortestGroup = j;
                 }
             }//so now we have the shortest list
-            return shortest;
+            return shortestGroup;
         }
         #endregion
     }
