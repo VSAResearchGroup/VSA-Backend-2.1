@@ -13,7 +13,7 @@ namespace Scheduler {
             Scheduler scheduler = new Scheduler(16, false);
             //scheduler.MakeStartingPoint("ENGL& 101", "MATH& 141");
             scheduler.InitDegreePlan(22, 6); //get this from UI later
-            scheduler.CreateSchedule();
+            scheduler.CreateSchedule(true);
             #endregion
 
             //#region Method 2: Automated based off of ParameterSetID
