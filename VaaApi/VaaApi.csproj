@@ -117,7 +117,6 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ScheduleModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
@@ -133,6 +132,10 @@
     <ProjectReference Include="..\Algorithm-2.0-master\Scheduler.csproj">
       <Project>{8c48265c-a39c-49c4-8acd-71b6eb5f7980}</Project>
       <Name>Scheduler</Name>
+    </ProjectReference>
+    <ProjectReference Include="ApiCore\ApiCore.csproj">
+      <Project>{6a1ff494-d2f4-4be7-a731-0e1c3b33908b}</Project>
+      <Name>ApiCore</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup>

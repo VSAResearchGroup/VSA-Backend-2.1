@@ -65,7 +65,7 @@ namespace Scheduler {
             SetUp(16, false, paramID);
             MakeStartingPoint();
             InitDegreePlan();
-            CreateSchedule();
+            CreateSchedule(true);
         }
         #endregion
 
@@ -425,13 +425,13 @@ namespace Scheduler {
         //
         // Afterwards, this course returns the resulting schedule.
         //------------------------------------------------------------------------------
-        public List<Machine> CreateSchedule()
+        public List<Machine> CreateSchedule(bool preferShortest)
         {
             List<Job> majorCourses = myPlan.GetList(0); //LIST OF REQUIRED COURSES
             for (int i = 0; i < majorCourses.Count; i++)
             {
                 Job job = majorCourses[i]; //GET NEXT CLASS IN LIST
-                ScheduleCourse(job); //FUNCTION CALL TO SCHEDULE LIST
+                ScheduleCourse(job, preferShortest); //FUNCTION CALL TO SCHEDULE LIST
             }
             finalPlan = GetBusyMachines(); //SUGGEST BETTER NAMING CONVENTION?//
             //return proposed schedule
@@ -445,7 +445,7 @@ namespace Scheduler {
         // If for some reason a course cannot be scheduled (due to scheduling conflicts)
         // then that course is added a supplmentary list of unscheduled coursees.
         //------------------------------------------------------------------------------
-        private void ScheduleCourse(Job job)
+        private void ScheduleCourse(Job job, bool preferShortest)
         {
             #region ENDCASE
             if (IsScheduled(job)) //CHECK IF CLASS IS SCHEDULED
@@ -460,8 +460,17 @@ namespace Scheduler {
             if (PrereqsExist(groups) && !job.GetPrerequisitesScheduled())
             {   //if j does not have prerequisites (OR its prerequisites have been scheduled) schedule j  
                 //schedule j's prerequisites by getting shortest group and whatnot
-                int shortest = GetShortestGroup(groups); //FIND GROUP WITH LEAST PREREQUISITES
-                List<CourseNode> group = groups[shortest].prereqs; //GET LIST OF PREREQUISITES 
+                int selectedGroup;
+                if (preferShortest)
+                {
+                   selectedGroup = GetShortestGroup(groups); //FIND GROUP WITH LEAST PREREQUISITES
+                }
+                else
+                {
+                    selectedGroup = GetAnyGroup(groups); //Find any group is OK
+                }
+                
+                List<CourseNode> group = groups[selectedGroup].prereqs; //GET LIST OF PREREQUISITES 
 
                 List<Job> jobsToBeScheduled = new List<Job>();
                 for (int j = 0; j < group.Count; j++)  //TRANSFER PREREQUSITE LIST INTO MORE JOBS
@@ -472,7 +481,7 @@ namespace Scheduler {
 
                 for (int k = 0; k < jobsToBeScheduled.Count; k++) //SCHEDULE THE PREREQUISITES
                 { //schedule them all here
-                    ScheduleCourse(jobsToBeScheduled[k]);
+                    ScheduleCourse(jobsToBeScheduled[k], preferShortest);
                 }//now they are scheduled
                 job.SetPrerequisitesScheduled(true);
             }
@@ -797,6 +806,25 @@ namespace Scheduler {
                 }
             }//so now we have the shortest list
             return shortestGroup;
+        }
+
+        //------------------------------------------------------------------------------
+        // if for course A you have to take [B, F, K] OR [J, Z], we pick the latter
+        // option because we don't want to take a lot of classes; in the long run,
+        // this is not always the fastest option so this can be optimized
+        //------------------------------------------------------------------------------
+        private int GetAnyGroup(List<CourseNode> groups)
+        {
+            if (groups == null)
+            {
+                return 0;
+            }
+            int shortest = int.MaxValue;
+            int shortestGroup = int.MaxValue;
+            var random = new Random();
+            var randomGroup = random.Next(groups.Count - 1);
+            return randomGroup;
+            
         }
         #endregion
     }
