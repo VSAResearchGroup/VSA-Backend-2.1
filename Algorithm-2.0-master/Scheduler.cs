@@ -55,17 +55,17 @@ namespace Scheduler {
             SetUp(8, true, -1);
         }
 
-        public Scheduler(int quartersDeclared, bool summerIntent)
+        public Scheduler(int quartersDeclared, bool summerIntent, bool preferShortest=true)
         {
             SetUp(quartersDeclared, summerIntent, -1);
         }
 
-        public Scheduler(int paramID)
+        public Scheduler(int paramID, bool preferShortest=true)
         {
             SetUp(16, false, paramID);
             MakeStartingPoint();
             InitDegreePlan();
-            CreateSchedule(true);
+            CreateSchedule(preferShortest);
         }
         #endregion
 
@@ -819,11 +819,11 @@ namespace Scheduler {
             {
                 return 0;
             }
-            int shortest = int.MaxValue;
-            int shortestGroup = int.MaxValue;
+            int shortest = 1;
             var random = new Random();
             var randomGroup = random.Next(groups.Count - 1);
-            return randomGroup;
+            return Math.Max(shortest, randomGroup);
+          
             
         }
         #endregion
