@@ -49,22 +49,21 @@ namespace CourseNetworkAPI
         #endregion
 
         #region Constructor
-        //Input parameter 1: the JSON string that represents all the courses
-        //Input parameter 2: the JSON string that represents all the prerequisites
         public CourseNetwork()
         {
             JObject o1 = JObject.Parse(File.ReadAllText("DBConnectionString.json"));
             string dbConnection = o1.SelectToken("DBConnectionString").ToString();
             SqlConnection cnn = new SqlConnection(dbConnection);
-            allCourses = executeQuery(cnn, "SELECT p.CourseID, MaxCredit as credits, GroupID, PrerequisiteID, PrerequisiteCourseID " +
+            prereqs = executeQuery(cnn, "SELECT p.CourseID, MaxCredit as credits, GroupID, PrerequisiteID, PrerequisiteCourseID " +
                 "FROM Prerequisite as p " +
                 "LEFT JOIN Course as c ON c.CourseID = p.CourseID " +
                 "FOR JSON PATH");
-            prereqs = executeQuery(cnn, "SELECT CourseID, MaxCredit as credits " +
+            allCourses = executeQuery(cnn, "SELECT CourseID, MaxCredit as credits " +
                 "FROM Course " +
                 "FOR JSON PATH");
         }
-        private string executeQuery(SqlConnection cnn, string query) {
+        private string executeQuery(SqlConnection cnn, string query)
+        {
             cnn.Open();
             SqlCommand cmd = new SqlCommand(query, cnn);
             var result = new StringBuilder();
@@ -160,134 +159,46 @@ namespace CourseNetworkAPI
             int index = courseIndex[targetID]; //Used for consistency and readability
 
             //check for valid course
-            if (index > -1)
+            if (index == -1)
             {
-                targetCourse.Add(new CourseNode()); //Adds first element: targetCourse[0]
-                targetCourse[0].courseID = targetID; //sets identifying course ID
+                return null;
+            }
+            targetCourse.Add(new CourseNode()); //Adds first element: targetCourse[0]
+            targetCourse[0].courseID = targetID; //sets identifying course ID
 
-                //Checks if Course has prerequisites
-                if (courseNetwork[index].prereqs != null)
+            //Checks if Course has prerequisites
+            if (courseNetwork[index].prereqs != null)
+            {
+                //iterates over prerequisites for coures
+                for (int j = 0; j < courseNetwork[index].prereqs.Count; j++)
                 {
-                    //iterates over prerequisites for coures
-                    for (int j = 0; j < courseNetwork[index].prereqs.Count; j++)
+                    int groupPath = courseNetwork[index].prereqs[j].groupID; //For Consistency and readability
+
+                    //Makes an index for each group path where the index is equal to the group ID
+                    if (groupPath > (targetCourse.Count - 1))
                     {
-                        int groupPath = courseNetwork[index].prereqs[j].groupID; //For Consistency and readability
-
-                        //Makes an index for each group path where the index is equal to the group ID
-                        if (groupPath > (targetCourse.Count - 1))
+                        while ((targetCourse.Count - 1) < groupPath)
                         {
-                            while ((targetCourse.Count - 1) < groupPath)
-                            {
-                                targetCourse.Add(new CourseNode());
-                            }
+                            targetCourse.Add(new CourseNode());
                         }
-
-                        //Checks to see if List object for the Group Course Node is empty 
-                        if (targetCourse[groupPath].prereqs == null)
-                        {
-                            targetCourse[groupPath].makeNewList();
-                        }
-
-                        //Assign Values
-                        targetCourse[groupPath].courseID = targetID;
-                        targetCourse[groupPath].groupID = groupPath;
-                        var coursePrereq = FindShortPath(courseNetwork[index].prereqs[j].PrerequisiteCourseID);
-                        courseNetwork[index].prereqs[j].prereqs = coursePrereq;
-                        targetCourse[groupPath].prereqs.Add(new CourseNode(courseNetwork[index].prereqs[j], true));
                     }
 
-                    //var shortestPath = 1;
-                    ////find the path with the least prereqs
-                    //foreach (var courseNode in targetCourse)
-                    //{
-                    //    if (courseNode.prereqs!=null && courseNode.prereqs.Count < targetCourse[shortestPath].prereqs.Count)
-                    //    {
-                    //        shortestPath = courseNode.groupID;
-                    //    }
-                    //}
+                    //Checks to see if List object for the Group Course Node is empty 
+                    if (targetCourse[groupPath].prereqs == null)
+                    {
+                        targetCourse[groupPath].makeNewList();
+                    }
 
-                    //targetCourse = targetCourse[shortestPath].prereqs;
+                    //Assign Values
+                    targetCourse[groupPath].courseID = targetID;
+                    targetCourse[groupPath].groupID = groupPath;
+                    var coursePrereq = FindShortPath(courseNetwork[index].prereqs[j].PrerequisiteCourseID);
+                    courseNetwork[index].prereqs[j].prereqs = coursePrereq;
+                    targetCourse[groupPath].prereqs.Add(new CourseNode(courseNetwork[index].prereqs[j], true));
                 }
-            }
-            else
-            {
-                return null; //Course Does Not Exist
             }
             return targetCourse;
         }
         #endregion
-
-        #region Show Network
-        //A Console output of the Course Network Object
-        public void ShowNetwork()
-        {
-            //Iterates over the Course Network
-            for (int i = 0; i < courseNetwork.Count; i++)
-            {
-                //Display Course Number
-                Console.Write("\t" + courseNetwork[i].courseID + ": ");
-
-                //Checks if Course has Prerequisite Courses
-                if (courseNetwork[i].prereqs == null)
-                {
-                    Console.WriteLine("No Prerequisite Courses");
-                }
-                else
-                {
-                    //Starts List of Prerequistes
-                    Console.Write("Prerequisite Courses: ");
-
-                    //Iterates over Course Node Prerequisite List
-                    for (int j = 0; j < courseNetwork[i].prereqs.Count; j++)
-                    {
-                        Console.Write(courseNetwork[i].prereqs[j].prerequisiteID + ", ");
-                        //Console.Write(courseNetwork[i].prereqs[j].groupID + "; ");
-                    }
-                    Console.WriteLine("Data Source = 65.175.68.34; Initial Catalog = vsaDev; Persist Security Info = True; User ID = sa; Password = kD$wg&OUrhfC6AMMq6q5Xh"j); //End Line for readaability
-                }
-            }
-        }
-        #endregion
-
-        #region Show Short List
-        //Purpose Shows the prerequisite paths of a List of Course Node Objects
-        public void ShowShortList(List<CourseNode> targetList)
-        {
-            //Checks to see if targetList is valid
-            if (targetList != null)
-            {
-                //Checks to see if targetList has prerequisites in groupPaths
-                if (targetList.Count > 1)
-                {
-                    //Course Information
-                    Console.WriteLine("\tCourse " + targetList[0].courseID + " ");
-                    //iterates over the targetList object
-                    for (int i = 1; i < targetList.Count; i++)
-                    {
-                        //Shows Group Information
-                        if (targetList[i].prereqs != null)
-                        {
-                            Console.Write("\t\tGroup " + targetList[i].groupID + " Prerequisites: ");
-                            //iterates over Prerequisite Object
-                            for (int j = 0; j < targetList[i].prereqs.Count; j++)
-                            {
-                                Console.Write(targetList[i].prereqs[j].prerequisiteID + "; ");
-                            }
-                            Console.WriteLine("Data Source = 65.175.68.34; Initial Catalog = vsaDev; Persist Security Info = True; User ID = sa; Password = kD$wg&OUrhfC6AMMq6q5Xh"j);
-                        }
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("\tCourse " + targetList[0].courseID + " has no Prerequisites");
-                }
-            }
-            else
-            {
-                Console.WriteLine("\tCourse Does Not exist");
-            }
-
-        }
     }
-    #endregion
 }

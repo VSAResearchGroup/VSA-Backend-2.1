@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using Newtonsoft.Json;
 namespace CourseNetworkAPI.Controllers
 {
     [Route("v1/[controller]")]
@@ -21,7 +22,7 @@ namespace CourseNetworkAPI.Controllers
 
         // GET: api/CourseNetwork
         [HttpGet]
-        public IEnumerable<string> Get(int course)
+        public string Get(int course)
         {
             CourseNetwork cn;
             if (!_cache.TryGetValue(CacheKeys.CourseNetwork, out cn))
@@ -38,9 +39,10 @@ namespace CourseNetworkAPI.Controllers
                 // Save Data in cache
                 _cache.Set(CacheKeys.CourseNetwork, cn, cOptions);
             }
-            cn.FindShortPath(course);
-
-            return new string[] {"HELLO", "THERE", "test" };
+            List<CourseNode> graph = cn.FindShortPath(course);
+            string graphString = JsonConvert.SerializeObject(graph);
+            // Transfer list of coursenodes into a adjacency list in JSON Format
+            return graphString;
         }
     }
 }
