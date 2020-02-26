@@ -200,5 +200,24 @@ namespace CourseNetworkAPI
             return targetCourse;
         }
         #endregion
+
+        #region JSON Flat
+        public string flatten(List<CourseNode> graph)
+        {
+            // Translate list of coursnodes such that map is a key of coursenode
+            // <coursenode> -> [<ints>]
+
+
+            string flat = "Data Source = 65.175.68.34; Initial Catalog = vsaDev; Persist Security Info = True; User ID = sa; Password = kD$wg&OUrhfC6AMMq6q5Xh"j;
+
+
+
+            return flat;
+        }
+
+        #endregion
     }
+
+
 }
+
