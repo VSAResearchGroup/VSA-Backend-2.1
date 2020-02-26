@@ -55,3 +55,22 @@ _A few notes about the fields in one of the course's objects_
 ### Caching 
 
 The Course Network Object is cached on the server for a sliding lifespan of 5 seconds. If the API request results in a hit then the API must be create, index, and build a course network from scratch. So keeping the API alive can result in a large speedup of request resolution.
+
+
+
+### Database
+
+The course network accesses the Microsoft SQL database through the SQL Connection in the System packages offered by the .net framework. The Connection is established in the Course Network file. The connection string is accessed via a file called DBConnection.json. This file is in the .gitignore since it contains the connection string. 
+
+
+
+If you choose to test/deploy this API please create a file and fill it with the following contents:
+
+```json
+{
+    "DBConnectionString":"<Your DB Connection String>"
+}
+```
+
+
+
