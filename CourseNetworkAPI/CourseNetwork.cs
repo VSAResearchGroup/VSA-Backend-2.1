@@ -200,5 +200,24 @@ namespace CourseNetworkAPI
             return targetCourse;
         }
         #endregion
+
+        #region JSON Flat
+        public string flatten(List<CourseNode> graph)
+        {
+            // Translate list of coursnodes such that map is a key of coursenode
+            // <coursenode> -> [<ints>]
+
+
+            string flat = "";
+
+
+
+            return flat;
+        }
+
+        #endregion
     }
+
+
 }
+
