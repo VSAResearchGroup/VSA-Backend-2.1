@@ -23,34 +23,23 @@ The `{CourseID}` in both lines are the user defined parameter, where the course 
 
 ### Return Value
 
-The return value of the GET Method is a JSON object that outlines an adjacency list of all the prerequisites for the given course ID. The JSON is object is as follows:
+The return value of the GET Method is a JSON object that outlines an adjacency list of all the prerequisites for the given course ID.
 
-```json
-{
-    Courses:[
-        {
-            CourseID: int 	// Represents the Unique ID number for a course.
-            Credits: int	// Represents the max number of credits.
-            GroupID: int	// Represents the Group ID for the Course.
-            PrerequisiteID: int	// Represents the unique ID number for a prereq course.
-            PrerequisiteCourseID: int	// Represents the unique ID number for a course.
-            Prereqs: [int]	// A list of prequisites
-            
-        }
-    ]
-}
-```
+To be able to use the JSON object returned from the API the receiving code must have access to CourseNode.cs. This is vital since the way you unpackage the data is by:
+
+
+
+`courseNetwork = JsonConvert.DeserializeObject<List<CourseNode>>(allCourses);`
+
+
+
+where `allcourses ` is the value returned from the API.
 
 
 
 The design of this object is heavily influenced by the object structure of the CourseNode.cs in the Scheduler CS project and the Course Network CS project. 
 
-_A few notes about the fields in one of the course's objects_
-
-* Group ID: If course A has 3 interchangeable prerequisites then the three courses have the same group ID.
-* Prerequisite ID: Figure out the difference between this field and the one below.
-* Prerequisite Course ID: They have the same comments above and is pretty ambiguous.
-* Prereqs: This fields holds an array of integers. Each integer maps to a Prerequisite Course ID? or Course ID in the list? __NEED TO FIGURE THIS RELATIONSHIP OUT__
+_If you want to understand more of the underlying structure of the return value please refer to CourseNode.cs here [VSA-Backend](https://github.com/VSAResearchGroup/VSA-Backend-2.1/blob/master/Algorithm-2.0-master/CourseNode.cs)
 
 ### Caching 
 

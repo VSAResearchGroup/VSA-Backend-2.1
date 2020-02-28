@@ -20,7 +20,7 @@ using System.Collections.Generic;
 
 namespace CourseNetworkAPI
 {
-    public class CourseNode
+    public class CourseNode 
     {
         #region Structure Variables
         public int courseID { get; set; } //Represents the Unique ID number for a course
