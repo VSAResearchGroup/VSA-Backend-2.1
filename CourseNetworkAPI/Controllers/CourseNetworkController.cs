@@ -40,9 +40,10 @@ namespace CourseNetworkAPI.Controllers
                 _cache.Set(CacheKeys.CourseNetwork, cn, cOptions);
             }
             List<CourseNode> graph = cn.FindShortPath(course);
-            string graphString = JsonConvert.SerializeObject(graph);
-            // Transfer list of coursenodes into a adjacency list in JSON Format
+            // Raw Serialized string from CourseNetwork
+            string graphString = JsonConvert.SerializeObject(graph, Formatting.Indented);
             return graphString;
         }
     }
 }
+ 
