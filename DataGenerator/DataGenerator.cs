@@ -24,7 +24,7 @@ namespace DataGenerator
         // This is commmented out to ignore this test. This test generates a lot of data
         // and should be ran sparingly as to not fill the database with a lot of redundant
         // test data.
-        //[TestMethod]
+        [TestMethod]
         public void GenerateData()
         {
             var insertedList = new List<int>();
@@ -32,6 +32,7 @@ namespace DataGenerator
             var courseObj = new CourseObject()
             {
                 school = "6",
+                courses = "5",
                 credits = "10",
                 major = "22",
                 quarters = "50",
@@ -191,13 +192,9 @@ namespace DataGenerator
         {
             foreach (var courseObject in courseObj)
             {
-
                 var insertedId = Preferences.ProcessPreference(courseObject, true);
                 insertedId.Should().NotBe(0);
                 insertedList.Add(insertedId);
-
-
-
             }
         }
     }
